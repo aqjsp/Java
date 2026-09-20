@@ -16,7 +16,7 @@
 ## 进阶
 
 - [并发与内存模型](进阶/并发与内存模型.md) — happens-before、锁、j.u.c、虚拟线程
-- [JVM 与垃圾回收](进阶/JVM与垃圾回收.md) — 运行时数据区、对象头、G1
+- [JVM 与垃圾回收](进阶/JVM与垃圾回收.md) — 运行时数据区、对象头、G1、安全点
 - [类加载与模块](进阶/类加载与模块.md) — 三层加载器、双亲委派、JPMS
 - [Stream 与现代语法](进阶/Stream与现代语法.md) — 流水线、Optional、sealed / pattern matching
 

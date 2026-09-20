@@ -402,6 +402,41 @@ seq 1000 | xargs -P 100 -I{} curl -sS -X POST http://127.0.0.1:8080/tasks \
 - GET `/tasks`：405（create 只收 POST）
 - 缺 payload：400
 
+压测时用 `jcmd <pid> Thread.dump_to_file` 或 JFR。虚拟线程在 `Thread.sleep` 上应该是 `UNMOUNTED` / parking，carrier 数量大约是核数，不会出现一千条平台线程。如果 dump 里大量虚拟线程卡在 `synchronized` 或 `Object.wait`，就是钉住了。
+
+单元测试不必起端口：把 `TaskStore` / `TaskWorker` 抽出来直接测状态机。
+
+```java
+@Test
+void casMovesPendingToRunning() {
+    TaskStore store = new TaskStore();
+    Task t = store.create("p");
+    TaskWorker w = new TaskWorker(store);
+    w.run(t.id());
+    assertEquals(Status.DONE, store.get(t.id()).orElseThrow().status());
+}
+
+@Test
+void missingPayloadRejected() {
+    assertThrows(IllegalArgumentException.class, () -> Json.payloadOf("{}"));
+}
+```
+
+handler 层的 400/404/405 用 `HttpServer` 起在端口 0（系统分配），`server.getAddress().getPort()` 取端口再 curl 或 `HttpClient` 打。不要写死 8080 再和本机别的进程抢。
+
+`HttpClient`（11，`java.net.http`）发请求：
+
+```java
+HttpClient client = HttpClient.newHttpClient();
+HttpRequest req = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/tasks"))
+        .POST(HttpRequest.BodyPublishers.ofString("{\"payload\":\"hi\"}"))
+        .build();
+HttpResponse<String> res = client.send(req, HttpResponse.BodyHandlers.ofString());
+assertEquals(202, res.statusCode());
+```
+
+这是 JDK 自带客户端，和 `HttpServer` 成对，仍然不引入 Spring。
+
 ---
 
 ## 十、这里用到了前面哪几条
