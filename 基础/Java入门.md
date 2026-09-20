@@ -211,22 +211,53 @@ public static Integer valueOf(int i) {
 }
 ```
 
-`IntegerCache.low` 钉死 **-128**。`high` 默认 127，可以用 `-XX:AutoBoxCacheMax` 或内部属性 `java.lang.Integer.IntegerCache.high` 抬上去，源码里有一句 `assert IntegerCache.high >= 127`——不能缩小到小于 127，那会违反 JLS。缓存数组在类初始化时填好，CDS 归档时整段放进共享堆，身份在归档前后必须一致，所以初始化之后不能再往 cache 数组里塞新的 `Integer`。
+`IntegerCache.low` 钉死 **-128**。`high` 默认 127，源码 `assert IntegerCache.high >= 127`——缩小到小于 127 违反 JLS。`cache[0]` 是 -128，`cache[255]` 是 127。`valueOf(i)` 走 `cache[i + 128]`。CDS 归档后身份必须仍对得上，初始化之后不能往 cache 里塞新对象。
+
+会错的程序（三组对照，一次跑完）：
 
 ```java
-Integer a = 127;
-Integer b = 127;
-System.out.println(a == b);      // true，规范保证
-
-Integer c = 128;
-Integer d = 128;
-System.out.println(c == d);      // 未规定。HotSpot 默认 false
-System.out.println(c.equals(d)); // true，比的是 int 值
-
-Integer e = new Integer(127);
-Integer f = 127;
-System.out.println(e == f);      // false。new 出来的不进缓存
+static void box() {
+    Integer a = 127, b = 127;
+    Integer c = 128, d = 128;
+    Integer e = new Integer(127), f = 127;
+    System.out.println(a == b);      // true，规范
+    System.out.println(c == d);      // 未规定；HotSpot 默认 false
+    System.out.println(e == f);      // false，new 不进池
+}
 ```
+
+javac 21 生成的字节码（常量池编号随编译变，指令按 JVMS）：
+
+```text
+bipush        127
+invokestatic  Integer.valueOf:(I)Ljava/lang/Integer;
+bipush        127
+invokestatic  Integer.valueOf:(I)Ljava/lang/Integer;
+
+sipush        128
+invokestatic  Integer.valueOf:(I)Ljava/lang/Integer;
+sipush        128
+invokestatic  Integer.valueOf:(I)Ljava/lang/Integer;
+
+new           Integer
+dup
+bipush        127
+invokespecial Integer.<init>:(I)V
+bipush        127
+invokestatic  Integer.valueOf:(I)Ljava/lang/Integer;
+```
+
+装箱没有 `new`。`new Integer(127)` 才是 `new` + `<init>`，和 `valueOf` 不是一条路。
+
+![valueOf(127) 同一份；128 两份；new 不进池](../image/java-integer-cache-steps.svg)
+
+| 语句 | 走的方法 | 返回的对象 | `==` |
+| --- | --- | --- | --- |
+| `a=127; b=127` | 两次 `valueOf`，127≤high | 都是 `cache[255]` | true（JLS） |
+| `c=128; d=128` | 两次 `valueOf`，128&gt;high | 两个 `new Integer(128)` | 未规定 / 默认 false |
+| `e=new Integer(127); f=127` | `<init>` vs `valueOf` | 堆上新对象 vs `cache[255]` | false |
+
+改一行：启动加 `-XX:AutoBoxCacheMax=256`。`valueOf(128)` 也走 cache，`c == d` 在 **这台 JVM** 上变成 true。规范没保证，换一台没这个参数的机器立刻碎。代码不能依赖这一行。
 
 比较包装类型一律 `equals`，或先拆箱再比 primitive。`==` 对引用是身份；对 primitive 是值。两边类型不一致时会拆箱。
 

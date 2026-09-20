@@ -10,20 +10,25 @@
 
 ## 一、通道和缓冲：写完要靠循环
 
-异常篇写过 `flip`。网络上多一条：`SocketChannel.write(buf)` **不保证一次写完**。TCP 窗口满、内核缓冲满，返回值可能小于 `buf.remaining()`。
+异常篇写过 `flip`。网络上多一条：`SocketChannel.write(buf)` **不保证一次写完**。16KB 要发出去，内核这次只收 4KB：
 
 ```java
-buf.flip();
-while (buf.hasRemaining()) {
-    int n = channel.write(buf);
-    if (n == 0) {
-        // 非阻塞模式：此刻写不进去，要等 OP_WRITE
-        break;
-    }
-}
+ByteBuffer buf = ByteBuffer.allocate(16 * 1024);
+fill16k(buf);                 // position=16384, limit=16384, capacity=16384
+buf.flip();                   // position=0, limit=16384
+int n = channel.write(buf);   // 返回 4096
 ```
 
-阻塞模式（虚拟线程上的默认用法）`write` 会一直堵到能写或炸，循环仍建议写——短写在阻塞模式少见，但 API 合同是「可能短写」。`read` 返回 0 不是 EOF；返回 **-1** 才是对端关了。非阻塞 `read` 返回 0 表示此刻没数据，注册 `OP_READ` 再 `select`。
+| 步骤 | position | limit | remaining | 对端收到 |
+| --- | --- | --- | --- | --- |
+| fill + flip 之后 | 0 | 16384 | 16384 | 0 |
+| `write` 返回 4096 | **4096** | 16384 | **12288** | 4KB |
+| 误 `clear()` | 0 | 16384 | 16384 | 仍只有 4KB，**12KB 当没发生过** |
+| 正确：再 `write` 直到 remaining=0 | 16384 | 16384 | 0 | 16KB |
+
+漏循环就是第三行。非阻塞下 `write` 返回 0：此刻窗口满，注册 `OP_WRITE`，就绪后从 **当前 position** 继续，不要 flip 第二次。
+
+阻塞模式（虚拟线程默认）`write` 往往会堵到能写，循环仍要写——API 合同是短写合法。`read` 返回 **-1** 才是 EOF；非阻塞返回 0 是此刻没数据。
 
 `ByteBuffer` 的 `position/limit` 是这次读写的窗口。读到一半解析不完，`compact` 把剩余挪到 0 再继续读。`clear` 只改指针，内核不会给你填零。直接缓冲适合长寿命、反复给通道用的缓冲；每请求 `allocateDirect` 会把堆外打满，回收靠 Cleaner，延迟难看。
 

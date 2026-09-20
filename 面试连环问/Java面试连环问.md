@@ -44,7 +44,7 @@ C++ 默认静态绑定，要虚才动态。Go 接口是 itable。Java 实例方�
 
 能说出口：OpenJDK 21 默认容量 16，负载因子 0.75，阈值 12。容量保持 2 的幂，下标 `(n - 1) & hash`。hash 先 `h ^ (h >>> 16)` 让高位参与。
 
-往下追：**树化阈值是多少？为什么还有 64？** `TREEIFY_THRESHOLD = 8`，`UNTREEIFY_THRESHOLD = 6`，`MIN_TREEIFY_CAPACITY = 64`。`putVal` 链表走到 `binCount >= 7` 调 `treeifyBin`；`treeifyBin` 第一句：表长 < 64 就 `resize()`，不树化。源码注释写明 64 ≥ 4×8，避免扩容和树化打架。哈希均匀时几乎走不到树。树化是防最坏哈希，不是 HashMap 变成 TreeMap。
+往下追：**树化阈值是多少？为什么还有 64？** 集合篇那张表：`hashCode` 恒 1 时，**第 8 次 put 还不调 `treeifyBin`**（`binCount=6`）。第 9 次 `binCount=7` 才调；表长 16&lt;64 **只 resize 到 32**，链不拆（`1 & 16 == 0`）。第 11 次表长 64 才真树化。答「超过 8 就树化」少了这两步。`UNTREEIFY_THRESHOLD=6`。哈希均匀时 #9 的 resize 就把链拆开，走不到树。
 
 再追：**多线程用 HashMap 会死环吗？** 1.7 头插 + 扩容会。1.8 尾插不再死环，**仍会丢数据、size 错**。不是「8 之后 HashMap 线程安全」。多线程用 `ConcurrentHashMap`。
 
@@ -86,15 +86,9 @@ C++ 默认静态绑定，要虚才动态。Go 接口是 itable。Java 实例方�
 
 能说出口：给这个字段的写和后续读一条 happens-before 边（§17.4.5）。读必须看见这条写，以及写之前同线程里按程序序发生的动作（传递）。它不是互斥，`n++` 仍丢更新。
 
-往下追：**墙上时钟写在读前面，读一定看见 1 吗？** 不一定。没有 hb 边就是 data race，规范允许看见旧值。规范自己的例子（Table 17.4.5-A）允许 `r1 == r2 == 0`。
+往下追：**墙上时钟写在读前面，读一定看见 1 吗？** 不一定。Table 17.4.5-A：允许先两边都读到 0，再写 A、写 B，`r1==r2==0`。那张执行序表在并发篇。
 
-再追：**正确同步的程序有什么保证？** 所有顺序一致执行都没有 data race，则所有执行看起来都顺序一致。按源码顺序推理合法。Java 的 data race **不是** C++ 的 UB：数组 length、虚分派仍安全；业务字段可见性没了。
-
-再追：**`synchronized` 和 `ReentrantLock` 可见性谁强？** 同一类。`Lock` 文档：成功 lock 等同 monitor 的 Lock，成功 unlock 等同 Unlock。多出来的是 `tryLock`（不尊重公平）、可中断、超时、多 Condition。Java 21 虚拟线程热路径上长时间阻塞，用 `ReentrantLock` 是为了不钉 carrier，不是因为可见性更强。
-
-再追：**非 volatile 的 long 读写原子吗？** §17.7：可以当成两次 32 位写，线程可能看见撕裂。volatile long / 引用 始终原子。64 位机器上普通 long 常常一条 mov，规范仍然允许撕。
-
-再追：**双重检查为什么要 volatile？** `new Holder()` 的「写字段」和「把引用赋给 instance」可以重排。另一个线程看见非 null 引用、读字段，读到默认值。volatile 写 instance 把构造里的字段写 hb 过去。能用类初始化（`static final Holder INSTANCE = new Holder()`）就别手写——§12.4.2 那把初始化锁已经够。枚举单例同一套。
+再追：**双重检查为什么要 volatile？** 字节码是 `new` / `putfield` / `putstatic`。无 volatile 时 B 可以看见 instance 非 null、x 仍是 0。有 volatile 的 putstatic 把 putfield hb 过去。能用类初始化就别手写。
 
 再追：**构造器里把 this 发布出去？** this-escape。final 字段的 freeze 在构造器退出时（§17.5.1）。别人可能读到 final 的默认值。`final int[]` 只冻结引用，元素没有。
 
@@ -236,7 +230,7 @@ JSON 的 `Content-Length` 用 UTF-8 字节数，不用 `String.length()`——`c
 
 往下追：**`getMethod` 和 `getDeclaredMethod`？** 前者 public 继承链，后者本类声明（含 private，不含父类方法）。`invoke` 的 checked 包在 `InvocationTargetException`。`setAccessible` 打 JDK 内部包，21 要模块 `opens`，否则 `InaccessibleObjectException`。
 
-再追：**equals 进不进 handler？** 进。`hashCode`/`toString` 也进。handler 里 `proxy.equals` 会递归。类代理（没接口）才需要 CGLIB/ByteBuddy 改字节码；`final` 类覆盖不了。`MethodHandle.invokeExact` 描述符必须精确匹配，JIT 能内联；反射热路径不要每请求 `getDeclaredMethod`。
+再追：**equals 进不进 handler？** 进。`save("ab")` 那张参数表：proxy / Method / `args=["ab"]`。`hashCode` 里调 `proxy.hashCode()` 递归到栈溢出。`forName` 两次：第一次 `ExceptionInInitializerError`，第二次 `NoClassDefFoundError`，不重跑静态块。
 
 Spring AOP：有接口默认 JDK Proxy，类代理才走 CGLIB。不是「CGLIB 更快所以默认」。
 
@@ -246,7 +240,7 @@ Spring AOP：有接口默认 JDK Proxy，类代理才走 CGLIB。不是「CGLIB 
 
 能说出口：持有计数。0 没人持有；同一线程再 lock 就 +1，超过 `Integer.MAX_VALUE` 抛 Error。释放减到 0 才 `unpark` 后继。
 
-往下追：**非公平怎么插队？** `NonfairSync.initialTryLock` 第一下 `CAS 0→1` 不问队列。队列里已有人 park，新线程仍可能抢到。`FairSync.tryAcquire` 用 `hasQueuedPredecessors`：前面有有效节点就不抢。`tryLock()` **不尊重公平**。
+往下追：**非公平怎么插队？** AQS 篇那张三线程表：A 持锁 → B 入队 park → A.unlock 把 state 置 0 并 unpark B → **B 还没跑到 tryAcquire** → C 的 `CAS(0,1)` 成功，owner=C，B 仍在队列。公平锁同一时刻 C 看见 `hasQueuedPredecessors`，不 CAS，B 先拿。`tryLock()` 不走这张表，永远可能插队。
 
 再追：**Condition.await？** 必须已持锁；把节点挂到条件队列；**完全释放**（重入清零）；park；signal 把节点搬回同步队列再 acquire。业务条件仍要 `while`。读锁升级写锁死锁。
 
@@ -256,7 +250,7 @@ Spring AOP：有接口默认 JDK Proxy，类代理才走 CGLIB。不是「CGLIB 
 
 能说出口：`defaultExecutor()` = `ForkJoinPool.commonPool()`。和 `parallelStream` 抢同一池。阻塞 HTTP 往里丢，池打满。
 
-往下追：**thenApply vs thenCompose？** apply 是 `T→U` 再包 CF；compose 是 `T→CompletionStage<U>` 摊平。嵌套异步用 compose，否则 `CF<CF<T>>`。
+往下追：**thenApply vs thenCompose？** 类型表：`thenApply(this::findUserAsync)` 得到 `CF<CF<User>>`，`join()` 拿到的还是 CF。compose 摊平。`allOf` 一个失败，计数器那张表证明另一个仍会跑完；`cancel(true)` 不中断 sleep。
 
 再追：**join 和 get？** join 抛 unchecked `CompletionException`；get 抛 checked `ExecutionException`。`cancel(true)` **不中断** 正在跑的 Supplier。`allOf` 一个失败其余不会自动取消。`orTimeout` 只让 CF 异常完成，不取消 I/O。21 把 executor 显式传成 `newVirtualThreadPerTaskExecutor()`。
 
@@ -266,7 +260,7 @@ Spring AOP：有接口默认 JDK Proxy，类代理才走 CGLIB。不是「CGLIB 
 
 能说出口：普通业务 HTTP、每请求下游 I/O，用虚拟线程 + 阻塞 Socket。Selector 留给海量空闲连接、非 VT 运行时、Netty EventLoop。不要 VT 里再 select。
 
-往下追：**`SocketChannel.write`？** 不保证一次写完，必须循环到 `remaining==0` 或等 `OP_WRITE`。`read` 返回 -1 才是 EOF，0 在非阻塞里是此刻没数据。`selectedKeys` 不是线程安全的，处理完必须 `iterator.remove()`。Java 21 `synchronized` 包着 `read` 钉 carrier。
+往下追：**`SocketChannel.write`？** 16KB 缓冲、write 返回 4096 那张表：position=4096，remaining=12288。这时 `clear()` 等于丢掉 12KB。循环写到 remaining=0，或等 OP_WRITE 从当前 position 继续。
 
 再追：**JIT 单态调用点失效？** 某调用点只见过 Dog，C2 把 `invokevirtual` 收成直接调并内联；来了 Cat，去优化回解释，再编多态。逃逸分析三种结果：栈上分配、标量替换、同步消除——是实现，不是语言保证。`jstack` 看不见虚拟线程，用 `jcmd Thread.dump_to_file`。
 

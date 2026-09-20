@@ -209,7 +209,18 @@ Collector<String, StringBuilder, String> joining2 = Collector.of(
         StringBuilder::toString);
 ```
 
-combiner 必须把 b 并进 a **或** 返回新对象，不能两个线程 append 同一个 builder 却不标 `CONCURRENT`。`joining` 官方实现不是这么简陋，但合同就是这四件套。
+并行切成两片时四件套各被调几次：
+
+| 调用 | 次数（两片） | 作用 |
+| --- | --- | --- |
+| supplier | 2 | 每片一个 StringBuilder |
+| accumulator | 每个元素 1 次 | append 进 **自己那片** 的 builder |
+| combiner | 1 | 把片 2 并进片 1（或返回新对象） |
+| finisher | 1 | `toString` |
+
+combiner 若写成 `(a, b) -> { a.append(b); return a; }` 且不标 `CONCURRENT`，两片仍是两个 builder，合的时候才碰到一起——合法。若 supplier 返回 **同一个** 共享 builder，两片同时 append，data race。`CONCURRENT` 特征等于声明「一个容器能被多线程 accumulator 拧」，源也必须是并发的。
+
+改一行：去掉 combiner 里的 `return a` 只 `append` 返回 null——并行结果丢一半。四件套每一脚都要能指出「下一行容器里是什么」。
 
 `Spliterator` 是并行切分的口。`trySplit` 返回后半段，自己留下前半；切不动返回 null。`ArrayList` 的 spliterator 按下标对半切，有序、`SIZED`、`SUBSIZED`。`HashSet` 的无序。`tryAdvance` 消费一个；`estimateSize` 给 fork 决策。自己写流源（树、图）不实现合理的 `trySplit`，`parallel()` 等于白写，所有工作仍在一个 worker 上。
 

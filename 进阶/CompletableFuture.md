@@ -37,7 +37,27 @@ CompletableFuture<User> user = id.thenCompose(this::findUserAsync);
 // Function<T, CompletionStage<U>>：你已经返回一个 Stage，摊平，不要 CF<CF<User>>
 ```
 
-嵌套异步（查完 id 再查库，库也是 CF）必须 `thenCompose`。写成 `thenApply(id -> findUserAsync(id))` 得到 `CompletableFuture<CompletableFuture<User>>`，`join()` 拿到的还是一个没完成的 CF。这是 CF 第一坑，和 Stream 的 `map` / `flatMap`、Optional 的 `map` / `flatMap` 同一张图。
+嵌套异步必须 `thenCompose`。类型展开：
+
+```java
+CompletableFuture<User> findUserAsync(String id) { ... }
+
+var wrong = id.thenApply(this::findUserAsync);
+// wrong 的类型：CompletableFuture<CompletableFuture<User>>
+User u = wrong.join();          // 编不过，join 得到的是 CF<User>
+User u2 = wrong.join().join();  // 能跑，第二层可能还没完成就……不，join 会等。但类型已经套了两层
+
+var right = id.thenCompose(this::findUserAsync);
+// right 的类型：CompletableFuture<User>
+User u3 = right.join();
+```
+
+| 写法 | 函数类型 | 结果类型 | `join()` 拿到 |
+| --- | --- | --- | --- |
+| `thenApply(this::findUserAsync)` | `String → CF<User>` | `CF<CF<User>>` | 一个 CF，还要再 join |
+| `thenCompose(this::findUserAsync)` | `String → CompletionStage<User>` | `CF<User>` | User |
+
+和 Stream `map`/`flatMap`、Optional `map`/`flatMap` 同一张图。
 
 `thenCombine(other, fn)` 等两个都完成，把两个值送进 `fn`。`thenAcceptBoth` 消费不返回。`runAfterBoth` 两个都完成再跑 `Runnable`。`applyToEither` 谁先完成用谁，另一个的结果丢掉——超时竞赛用这个，要自己处理「慢的那个还在跑」。
 
@@ -106,7 +126,39 @@ CPU 密集拆分仍用 `ForkJoinPool`（可以自己 new，别用 common 和业�
 
 ---
 
-## 六、完整走一遍：默认池被 HTTP 打满
+## 六、`allOf` 一个失败，其余仍在跑
+
+口头说「失败就停」是错的。用计数器：
+
+```java
+AtomicInteger ran = new AtomicInteger();
+CompletableFuture<Void> a = CompletableFuture.runAsync(() -> {
+    throw new RuntimeException("a");
+});
+CompletableFuture<Void> b = CompletableFuture.runAsync(() -> {
+    try { Thread.sleep(200); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+    ran.incrementAndGet();
+});
+try {
+    CompletableFuture.allOf(a, b).join();
+} catch (CompletionException e) {
+    // a 的异常
+}
+// 200ms 后：
+System.out.println(ran.get());   // 1。b 跑完了。没有自动 cancel
+```
+
+| 时刻 | a | b | `ran` |
+| --- | --- | --- | --- |
+| a 抛异常 | 异常完成 | 仍在 sleep | 0 |
+| `allOf.join` 抛 CompletionException | 已完成 | 仍在跑 | 0 |
+| b sleep 结束 | | 正常完成 | **1** |
+
+改一行：catch 之后 `b.cancel(true)`。`ran` 仍可能是 1——CF 的 cancel **不中断** sleep。要停 b，b 自己得查中断或 `isCancelled`。`orTimeout` 同样只让 CF 异常完成，不取消 Supplier。
+
+---
+
+## 七、完整走一遍：默认池被 HTTP 打满
 
 ```java
 List<String> urls = loadUrls();                 // 200 个
@@ -126,7 +178,7 @@ CompletableFuture.allOf(fs.toArray(CompletableFuture[]::new)).join();
 
 ---
 
-## 七、反模式
+## 八、反模式
 
 - `supplyAsync(blockingIo)` 不传 Executor。
 - `thenApply(x -> otherCf(x))` 得到 CF&lt;CF&lt;T&gt;&gt;，该用 `thenCompose`。

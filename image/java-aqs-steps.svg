@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="960" height="480" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="960" height="480" rx="12" fill="#fafafa"/>
+  <text x="480" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e">NonfairSync：A 持锁，B 入队 park，A 释放后 C 插队</text>
+
+  <rect x="16" y="48" width="300" height="200" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="166" y="74" text-anchor="middle" font-size="13" font-weight="700" fill="#1565c0">① A.lock 成功</text>
+  <text x="166" y="100" text-anchor="middle" font-size="12" fill="#1565c0">state=1 owner=A</text>
+  <text x="166" y="124" text-anchor="middle" font-size="12" fill="#1565c0">head / tail = 还不存在</text>
+  <text x="166" y="156" text-anchor="middle" font-size="11" fill="#37474f">CAS 0→1，不问队列</text>
+  <text x="166" y="180" text-anchor="middle" font-size="11" fill="#37474f">没有节点对象</text>
+  <text x="166" y="220" text-anchor="middle" font-size="11" fill="#546e7a">A 仍在临界区</text>
+
+  <rect x="330" y="48" width="300" height="200" rx="8" fill="#fff3e0" stroke="#e65100"/>
+  <text x="480" y="74" text-anchor="middle" font-size="13" font-weight="700" fill="#e65100">② B.lock 失败，入队</text>
+  <text x="480" y="100" text-anchor="middle" font-size="12" fill="#e65100">state=1 owner=A 不变</text>
+  <text x="480" y="132" text-anchor="middle" font-size="12" fill="#e65100">head=哨兵 → B(park) =tail</text>
+  <text x="480" y="164" text-anchor="middle" font-size="11" fill="#37474f">initialTryLock 失败</text>
+  <text x="480" y="188" text-anchor="middle" font-size="11" fill="#37474f">acquire(1) 建 head，B park</text>
+  <text x="480" y="220" text-anchor="middle" font-size="11" fill="#546e7a">队列第一次出现</text>
+
+  <rect x="644" y="48" width="300" height="200" rx="8" fill="#ffcdd2" stroke="#c62828"/>
+  <text x="794" y="74" text-anchor="middle" font-size="13" font-weight="700" fill="#b71c1c">③ A.unlock 然后 C.lock</text>
+  <text x="794" y="100" text-anchor="middle" font-size="12" fill="#b71c1c">A 放锁：state=0 owner=null</text>
+  <text x="794" y="122" text-anchor="middle" font-size="12" fill="#b71c1c">unpark B（B 还没跑到 CPU）</text>
+  <text x="794" y="150" text-anchor="middle" font-size="12" fill="#b71c1c">C CAS 0→1 成功</text>
+  <text x="794" y="174" text-anchor="middle" font-size="12" fill="#b71c1c">state=1 owner=C</text>
+  <text x="794" y="204" text-anchor="middle" font-size="12" fill="#b71c1c">B 仍在队列里，稍后才试</text>
+  <text x="794" y="228" text-anchor="middle" font-size="11" fill="#37474f">这就是非公平插队</text>
+
+  <rect x="16" y="268" width="928" height="188" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="480" y="296" text-anchor="middle" font-size="14" font-weight="700" fill="#1b5e20">同一时刻换成 FairSync</text>
+  <text x="480" y="324" text-anchor="middle" font-size="13" fill="#1b5e20">③′ C.lock：hasQueuedPredecessors()==true → 不 CAS，入队排在 B 后面</text>
+  <text x="480" y="352" text-anchor="middle" font-size="13" fill="#1b5e20">head=哨兵 → B → C=tail　　state 仍是 0，直到 B 被调度 tryAcquire</text>
+  <text x="480" y="380" text-anchor="middle" font-size="13" fill="#1b5e20">B 拿锁：state=1 owner=B。C 继续 park。</text>
+  <text x="480" y="412" text-anchor="middle" font-size="12" fill="#37474f">tryLock() 即使 FairSync 也不走 hasQueuedPredecessors，仍可能插队</text>
+  <text x="480" y="436" text-anchor="middle" font-size="12" fill="#37474f">A 释放后立刻再 lock、队列已空，公平锁也会再给 A——公平不是调度器 FIFO</text>
+</svg>

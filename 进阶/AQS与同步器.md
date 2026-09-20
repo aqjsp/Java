@@ -144,15 +144,49 @@ AQS 阻塞用 `LockSupport.park`，不是 `Object.wait`。`unpark` 可以先于 
 
 ---
 
-## 六、完整走一遍：非公平锁，队列里已有人，新线程插队
+## 六、会错的程序：三线程，A 释放的窗口给 C 插队
 
-1. 线程 A `lock()`，`compareAndSetState(0,1)` 成功，owner=A，`state=1`。队列还不存在。
-2. 线程 B `lock()`，CAS 失败，owner 不是 B，`initialTryLock` 返回 false，`acquire(1)`：建 head 哨兵，B 的节点接到 tail，`tryAcquire` 仍失败（state==1），`park`。
-3. 线程 C `lock()`。非公平：`initialTryLock` 先 CAS。若此时 A 已经 `unlock` 把 state 置 0，C 的 CAS 可能成功，**B 仍在 park**。C 插队。这是 NonfairSync 的本意。
-4. 若 A 还没放，C 同样入队，排在 B 后面。A `unlock`，`tryRelease` 让 `free==true`，`signalNext(head)` unpark B（或 C，看谁在头后面）。被叫醒的那个 `tryAcquire`，成功则把自己设成新 head。
-5. 公平锁的第 3 步：C 看见 `hasQueuedPredecessors()` 为 true，CAS 都不试，入队排在 B 后。A 释放后 B 先拿。
+下面不是「可能插队」四个字，是一张表。调度器只要在 A.unlock 返回之后、B 从 park 跑到 `tryAcquire` 之前，插入 C.lock，NonfairSync 就会走出第三列。
 
-面试只答「AQS 是个队列」不够。要能说出：`state` 在 ReentrantLock 里是重入计数；非公平第一下 CAS 不问队列；公平用 `hasQueuedPredecessors` 挡插队；Condition 先完全放锁，signal 是搬回同步队列，不是直接把 CPU 给对方。
+```java
+ReentrantLock lock = new ReentrantLock(); // NonfairSync
+// 线程 A
+lock.lock();
+// ……临界区……
+lock.unlock();
+
+// 线程 B 在 A 持锁期间
+lock.lock();   // 入队，park
+
+// 线程 C 在 A.unlock 之后立刻
+lock.lock();   // 非公平：CAS 0→1，B 还在队列里
+```
+
+![NonfairSync：B park 着，C 插队](../image/java-aqs-steps.svg)
+
+### 逐步表（NonfairSync）
+
+| 时刻 | 刚执行完 | state | owner | 队列 | B / C |
+| --- | --- | --- | --- | --- | --- |
+| ① | A.lock，`CAS(0,1)` 成功 | 1 | A | 无（head 还不存在） | — |
+| ② | B.lock，`initialTryLock` 失败，`acquire(1)` 建哨兵，B 节点入队，park | 1 | A | head=哨兵 → B=tail | B park |
+| ③a | A.unlock，`tryRelease`：state=0，owner=null，`signalNext` unpark B | 0 | null | 仍是 哨兵 → B | B 被 unpark，**还没跑到 tryAcquire** |
+| ③b | C.lock，`initialTryLock`：`CAS(0,1)` **成功**，不问队列 | 1 | **C** | 仍是 哨兵 → B | C 持锁；B 稍后 tryAcquire 失败再 park |
+
+合上源码看下一行：③b 的 `compareAndSetState(0, 1)` 不读 `hasQueuedPredecessors`。队列里有人不是「不能 CAS」的条件。这就是非公平。
+
+### 改一行：`new ReentrantLock(true)`
+
+同一时刻换成 `FairSync`。③b 变成：
+
+| 时刻 | 刚执行完 | state | owner | 队列 |
+| --- | --- | --- | --- | --- |
+| ③b′ | C.lock：`hasQueuedPredecessors()==true`，**不 CAS**，入队排在 B 后 | 0 | null | 哨兵 → B → C |
+| ④ | B 被调度，`tryAcquire` 成功 | 1 | **B** | 哨兵（B 变 head）→ C park |
+
+表必须变成 B 先拿。C 即使在 A 释放的窗口到达，公平锁也不给它。
+
+再改一行：C 改成 `tryLock()`，即便构造器是 `true`，`tryLock` 仍不走 `hasQueuedPredecessors`，③b 又变回 C 持锁。文档写了：untimed `tryLock()` 不尊重公平。
 
 ---
 
