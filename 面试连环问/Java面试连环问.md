@@ -223,3 +223,50 @@ JSON 的 `Content-Length` 用 UTF-8 字节数，不用 `String.length()`——`c
 | data race | 和 C++ 一样 UB | 不是 UB，可见性仍没了 |
 | `List.of` | 可变 | 不可变，不许 null |
 | finalize | 还用 | 18 deprecated for removal |
+| JDK Proxy | 能代理类 | 只能接口；类代理要改字节码 |
+| CF 默认池 | 「异步就行」 | `ForkJoinPool.commonPool()`，I/O 会打满 |
+| AQS 公平 | 一定按排队跑 | `hasQueuedPredecessors` 挡插队；调度仍可不公平 |
+| Selector | 比虚拟线程高级 | 21 默认阻塞 Socket + VT；海量空闲连接才需要多路复用 |
+
+---
+
+### 15、`Class.forName` 会跑静态块吗？Proxy 为什么代理不了 ArrayList？
+
+能说出口：单参数 `forName` 会初始化（`<clinit>`）。只要 Class 不要初始化：`forName(name, false, loader)`。`Proxy.newProxyInstance` 第二参数必须是接口，传入 class 抛 `IllegalArgumentException`。
+
+往下追：**`getMethod` 和 `getDeclaredMethod`？** 前者 public 继承链，后者本类声明（含 private，不含父类方法）。`invoke` 的 checked 包在 `InvocationTargetException`。`setAccessible` 打 JDK 内部包，21 要模块 `opens`，否则 `InaccessibleObjectException`。
+
+再追：**equals 进不进 handler？** 进。`hashCode`/`toString` 也进。handler 里 `proxy.equals` 会递归。类代理（没接口）才需要 CGLIB/ByteBuddy 改字节码；`final` 类覆盖不了。`MethodHandle.invokeExact` 描述符必须精确匹配，JIT 能内联；反射热路径不要每请求 `getDeclaredMethod`。
+
+Spring AOP：有接口默认 JDK Proxy，类代理才走 CGLIB。不是「CGLIB 更快所以默认」。
+
+---
+
+### 16、AQS 的 state 在 ReentrantLock 里是什么？公平锁挡谁？
+
+能说出口：持有计数。0 没人持有；同一线程再 lock 就 +1，超过 `Integer.MAX_VALUE` 抛 Error。释放减到 0 才 `unpark` 后继。
+
+往下追：**非公平怎么插队？** `NonfairSync.initialTryLock` 第一下 `CAS 0→1` 不问队列。队列里已有人 park，新线程仍可能抢到。`FairSync.tryAcquire` 用 `hasQueuedPredecessors`：前面有有效节点就不抢。`tryLock()` **不尊重公平**。
+
+再追：**Condition.await？** 必须已持锁；把节点挂到条件队列；**完全释放**（重入清零）；park；signal 把节点搬回同步队列再 acquire。业务条件仍要 `while`。读锁升级写锁死锁。
+
+---
+
+### 17、`supplyAsync` 默认打在哪个池？thenApply 和 thenCompose？
+
+能说出口：`defaultExecutor()` = `ForkJoinPool.commonPool()`。和 `parallelStream` 抢同一池。阻塞 HTTP 往里丢，池打满。
+
+往下追：**thenApply vs thenCompose？** apply 是 `T→U` 再包 CF；compose 是 `T→CompletionStage<U>` 摊平。嵌套异步用 compose，否则 `CF<CF<T>>`。
+
+再追：**join 和 get？** join 抛 unchecked `CompletionException`；get 抛 checked `ExecutionException`。`cancel(true)` **不中断** 正在跑的 Supplier。`allOf` 一个失败其余不会自动取消。`orTimeout` 只让 CF 异常完成，不取消 I/O。21 把 executor 显式传成 `newVirtualThreadPerTaskExecutor()`。
+
+---
+
+### 18、21 还要不要 Selector？write 一次写得完吗？
+
+能说出口：普通业务 HTTP、每请求下游 I/O，用虚拟线程 + 阻塞 Socket。Selector 留给海量空闲连接、非 VT 运行时、Netty EventLoop。不要 VT 里再 select。
+
+往下追：**`SocketChannel.write`？** 不保证一次写完，必须循环到 `remaining==0` 或等 `OP_WRITE`。`read` 返回 -1 才是 EOF，0 在非阻塞里是此刻没数据。`selectedKeys` 不是线程安全的，处理完必须 `iterator.remove()`。Java 21 `synchronized` 包着 `read` 钉 carrier。
+
+再追：**JIT 单态调用点失效？** 某调用点只见过 Dog，C2 把 `invokevirtual` 收成直接调并内联；来了 Cat，去优化回解释，再编多态。逃逸分析三种结果：栈上分配、标量替换、同步消除——是实现，不是语言保证。`jstack` 看不见虚拟线程，用 `jcmd Thread.dump_to_file`。
+

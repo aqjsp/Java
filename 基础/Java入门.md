@@ -398,7 +398,63 @@ public class Demo {
 
 ---
 
-## 八、和三门语言对照，钉死
+## 八、控制流、方法描述符、javap、classpath 谁赢
+
+### 1、definite assignment 管的是路径，不是「看起来赋过」
+
+```java
+int x;
+if (flag) x = 1;
+else x = 2;
+System.out.println(x);           // 合法，两条路径都赋了
+
+int y;
+if (flag) y = 1;
+System.out.println(y);           // 编译失败，false 路径没赋
+
+int z;
+while (true) { z = 1; break; }
+System.out.println(z);           // 合法，编译器看懂了必进循环体再 break
+```
+
+`if (true)` 的死代码规则和 definite assignment 搅在一起：编译器按常量条件裁路径。`boolean flag` 不是编译期常量，false 分支必须赋。`switch` 表达式穷尽才保证有值；老 `switch` 语句漏 case 再读变量，同样编译失败。
+
+`for (int i = 0; i < n; i++)` 的 `i` 作用域只在循环。增强 for 是 iterator，集合篇的 fail-fast 从这里长出来。
+
+### 2、方法描述符是字节码里的真名
+
+`int add(int a, String s)` 的描述符是 `(ILjava/lang/String;)I`。`void main(String[] args)` 是 `([Ljava/lang/String;)V`。`Integer.valueOf(int)` 是 `(I)Ljava/lang/Integer;`。
+
+重载靠描述符区分，不是靠参数名。擦除后 `void f(List<String>)` 和 `void f(List<Integer>)` 描述符都是 `(Ljava/util/List;)V`，所以不能这么重载。`javap -s` 打描述符，`-c` 打字节码。
+
+### 3、javap 把装箱对到 `valueOf`
+
+```java
+static Integer box(int n) {
+    return n;
+}
+```
+
+`javap -c -p` 看见的不是「语法糖」三个字，是：
+
+```text
+invokestatic #2  // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+areturn
+```
+
+`Integer a = 127; Integer b = 127; a == b` 两边都是 `valueOf`，进 cache。`new Integer(127)` 是 `new` + `invokespecial <init>`，不进 cache。把这段编出来自己看一遍，比背「-128 到 127」记得牢。
+
+拆箱是 `invokevirtual Integer.intValue`。`Integer x = null; int y = x;` 就是在这条 `intValue` 上 NPE。
+
+### 4、classpath 同名类：谁先被 define 谁赢
+
+`java -cp a.jar:b.jar com.shop.App`。两个 jar 都有 `com.shop.Util`，应用加载器按 classpath **顺序** 找，先找到的那份 `defineClass`，另一份永远不会成为这个加载器下的 `Util`。没有「自动选新版本」。模块路径上同名还可能直接失败（分裂包）。
+
+冲突的现场是依赖树里两份传递依赖，不是「Java 坏了」。`jdeps` / 构建工具的 dependency tree 把谁先放进 classpath 查清，不要靠重启碰运气。
+
+---
+
+## 九、和三门语言对照，钉死
 
 | | C++ | Go | Python | Java |
 | --- | --- | --- | --- | --- |
@@ -412,7 +468,7 @@ public class Demo {
 
 ---
 
-## 九、反模式
+## 十、反模式
 
 - 用 `==` 比 `Integer` / `String`。
 - `new Integer(n)`。走 `valueOf` 或自动装箱。

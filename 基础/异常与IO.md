@@ -234,7 +234,21 @@ try (InputStream in = Files.newInputStream(src);
 
 ---
 
-## 八、反模式
+## 八、字符集和 `serialVersionUID`
+
+`String.getBytes()` 无参走 `Charset.defaultCharset()`，21 在多数 Linux 已是 UTF-8，Windows 上仍可能是系统代码页。协议、文件、HTTP 头写死 `StandardCharsets.UTF_8`。`new InputStreamReader(in)` 同样吃默认 charset。`Files.readString(path)` 默认 UTF-8（NIO.2 这条是明确的），和 `FileReader` 不是同一合同。
+
+半个 UTF-8 字符劈开：`InputStream.read` 读到缓冲中间，按 Latin-1 当 char 会烂。文本用 `Reader` / `CharsetDecoder`，二进制用 `byte[]` / `ByteBuffer`。`MalformedInputException` 是解码器在报，不是「文件坏了」的唯一解释——也可能你用了错的 charset。
+
+普通类实现 `Serializable` 不写 `serialVersionUID`，UID 由类结构算出来。加一个无关字段，旧字节流 `InvalidClassException`。值对象、RPC DTO、缓存里的 Java 序列化，UID 写死。Java 序列化不是 JSON，不能当对外协议——gadget 链是真实攻击面。新代码对外用 JSON / protobuf，对内实在要 Java 序列化才写 UID 并关对象流过滤器以外的类型。
+
+`record` 序列化走规范构造器，见面向对象篇。`serialPersistentFields` 能改字段集合，用错比不写 UID 更难查。
+
+SocketChannel 一次 `write` 写不完、Selector 的循环，进「网络 NIO 与虚拟线程」。这里只记：`IOException` 是 checked，网络超时是 `SocketTimeoutException`（它是 IOException 子类），中断读可能是 `InterruptedIOException`，空 catch 会把取消和真错误搅在一起。
+
+---
+
+## 九、反模式
 
 - `e.printStackTrace()` 当错误处理。
 - `catch (Exception e) { throw new RuntimeException(e); }` 无说明地剥掉 checked。
@@ -247,5 +261,7 @@ try (InputStream in = Files.newInputStream(src);
 - `channel.write` 只调一次就当写完。
 - finally 里 `return`。
 - 热路径 `throw new` 当分支。
+- `getBytes()` / `FileReader` 依赖默认 charset。
+- 对外协议用 Java 序列化还不写 UID。
 
 基础四篇到此。进阶从内存模型开始：没有 happens-before，上面这些对象在两个线程之间读到什么，规范不保证。

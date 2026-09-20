@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 380" width="920" height="380" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="380" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">AQS：state + CLH 变体队列；头结点是哨兵</text>
+  <rect x="40" y="52" width="260" height="88" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="170" y="82" text-anchor="middle" font-size="14" font-weight="700" fill="#1565c0">int state</text>
+  <text x="170" y="108" text-anchor="middle" font-size="12" fill="#1565c0">ReentrantLock = 持有计数</text>
+  <text x="170" y="128" text-anchor="middle" font-size="12" fill="#1565c0">Latch = 剩余 count</text>
+  <rect x="340" y="52" width="540" height="88" rx="8" fill="#fff3e0" stroke="#e65100"/>
+  <text x="610" y="82" text-anchor="middle" font-size="14" font-weight="700" fill="#e65100">独占 acquire 伪代码（AQS 类注释）</text>
+  <text x="610" y="108" text-anchor="middle" font-size="12" fill="#e65100">while (!tryAcquire) { 入队; 可能 park }</text>
+  <text x="610" y="128" text-anchor="middle" font-size="12" fill="#e65100">release: tryRelease 成功则 unpark 后继</text>
+  <rect x="40" y="160" width="840" height="80" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="80" y="194" font-size="13" fill="#1b5e20">head（哨兵，第一次争用才建）</text>
+  <text x="360" y="194" font-size="13" fill="#1b5e20">→ 线程A Exclusive</text>
+  <text x="560" y="194" font-size="13" fill="#1b5e20">→ 线程B Shared</text>
+  <text x="760" y="194" font-size="13" fill="#1b5e20">→ tail</text>
+  <text x="460" y="224" text-anchor="middle" font-size="12" fill="#2e7d32">独占和共享等在同一条 FIFO 上。公平不自动：FairSync 自己查 hasQueuedPredecessors</text>
+  <rect x="40" y="256" width="400" height="96" rx="8" fill="#ffcdd2" stroke="#c62828"/>
+  <text x="240" y="286" text-anchor="middle" font-size="13" font-weight="700" fill="#b71c1c">NonfairSync</text>
+  <text x="240" y="312" text-anchor="middle" font-size="12" fill="#b71c1c">CAS 0→1 不看队列（插队）</text>
+  <text x="240" y="334" text-anchor="middle" font-size="12" fill="#b71c1c">tryLock() 同样不尊重公平</text>
+  <rect x="480" y="256" width="400" height="96" rx="8" fill="#c8e6c9" stroke="#2e7d32"/>
+  <text x="680" y="286" text-anchor="middle" font-size="13" font-weight="700" fill="#1b5e20">FairSync</text>
+  <text x="680" y="312" text-anchor="middle" font-size="12" fill="#1b5e20">队列非空且自己不是队头 → 不抢</text>
+  <text x="680" y="334" text-anchor="middle" font-size="12" fill="#1b5e20">hasQueuedPredecessors 挡住插队</text>
+</svg>

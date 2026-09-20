@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 340" width="920" height="340" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="340" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">HotSpot 分层：解释 → C1 → C2；假设失效就去优化</text>
+  <rect x="36" y="60" width="160" height="90" rx="8" fill="#cfd8dc" stroke="#455a64"/>
+  <text x="116" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#263238">解释器</text>
+  <text x="116" y="122" text-anchor="middle" font-size="11" fill="#546e7a">计数升温</text>
+  <rect x="236" y="60" width="180" height="90" rx="8" fill="#bbdefb" stroke="#1565c0"/>
+  <text x="326" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#1565c0">C1</text>
+  <text x="326" y="122" text-anchor="middle" font-size="11" fill="#1565c0">带剖析的本地码</text>
+  <rect x="456" y="60" width="180" height="90" rx="8" fill="#ffccbc" stroke="#d84315"/>
+  <text x="546" y="98" text-anchor="middle" font-size="14" font-weight="700" fill="#bf360c">C2</text>
+  <text x="546" y="122" text-anchor="middle" font-size="11" fill="#e64a19">激进优化</text>
+  <rect x="676" y="60" width="200" height="90" rx="8" fill="#c8e6c9" stroke="#2e7d32"/>
+  <text x="776" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#1b5e20">单态调用点</text>
+  <text x="776" y="114" text-anchor="middle" font-size="11" fill="#2e7d32">只见过 Dog → 直接调</text>
+  <text x="776" y="134" text-anchor="middle" font-size="11" fill="#c62828">来了 Cat → 去优化</text>
+  <path d="M196 105 L236 105" stroke="#546e7a" stroke-width="2"/>
+  <path d="M416 105 L456 105" stroke="#546e7a" stroke-width="2"/>
+  <path d="M636 105 L676 105" stroke="#546e7a" stroke-width="2"/>
+  <rect x="36" y="180" width="848" height="128" rx="8" fill="#eceff1" stroke="#90a4ae"/>
+  <text x="460" y="212" text-anchor="middle" font-size="13" fill="#37474f">逃逸分析三种结果（实现优化，语言规则仍当对象在堆上）</text>
+  <text x="180" y="250" text-anchor="middle" font-size="13" fill="#1565c0">栈上分配</text>
+  <text x="460" y="250" text-anchor="middle" font-size="13" fill="#e65100">标量替换（拆字段）</text>
+  <text x="740" y="250" text-anchor="middle" font-size="13" fill="#2e7d32">同步消除</text>
+  <text x="460" y="284" text-anchor="middle" font-size="12" fill="#c62828">去优化：类型假设 / 没逃逸假设失败 → 回解释，再编</text>
+</svg>

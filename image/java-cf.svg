@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 360" width="920" height="360" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="360" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">CompletableFuture：依赖边；默认线程是 commonPool</text>
+  <rect x="40" y="56" width="200" height="64" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="140" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="#1565c0">supplyAsync</text>
+  <text x="140" y="104" text-anchor="middle" font-size="11" fill="#1565c0">T 结果</text>
+  <rect x="300" y="56" width="200" height="64" rx="8" fill="#fff3e0" stroke="#e65100"/>
+  <text x="400" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="#e65100">thenApply</text>
+  <text x="400" y="104" text-anchor="middle" font-size="11" fill="#e65100">T → U　同步函数</text>
+  <rect x="560" y="56" width="200" height="64" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="660" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="#2e7d32">thenCompose</text>
+  <text x="660" y="104" text-anchor="middle" font-size="11" fill="#2e7d32">T → CompletionStage&lt;U&gt;</text>
+  <path d="M240 88 L300 88" stroke="#546e7a" stroke-width="2"/>
+  <path d="M500 88 L560 88" stroke="#546e7a" stroke-width="2"/>
+  <rect x="40" y="148" width="840" height="72" rx="8" fill="#eceff1" stroke="#90a4ae"/>
+  <text x="460" y="178" text-anchor="middle" font-size="13" fill="#37474f">thenApply 把 U 再包一层 CF；thenCompose 把内层 Stage 摊平。嵌套异步用 compose</text>
+  <text x="460" y="204" text-anchor="middle" font-size="13" fill="#c62828">不传 Executor 的 *Async 走 defaultExecutor() = ForkJoinPool.commonPool()</text>
+  <rect x="40" y="240" width="260" height="88" rx="8" fill="#ffcdd2" stroke="#c62828"/>
+  <text x="170" y="272" text-anchor="middle" font-size="13" font-weight="700" fill="#b71c1c">exceptionally</text>
+  <text x="170" y="298" text-anchor="middle" font-size="12" fill="#b71c1c">只看见异常，正常值原样过</text>
+  <rect x="330" y="240" width="260" height="88" rx="8" fill="#ffe0b2" stroke="#e65100"/>
+  <text x="460" y="272" text-anchor="middle" font-size="13" font-weight="700" fill="#e65100">whenComplete</text>
+  <text x="460" y="298" text-anchor="middle" font-size="12" fill="#e65100">旁路观察，不改结果类型</text>
+  <rect x="620" y="240" width="260" height="88" rx="8" fill="#c8e6c9" stroke="#2e7d32"/>
+  <text x="750" y="272" text-anchor="middle" font-size="13" font-weight="700" fill="#1b5e20">handle</text>
+  <text x="750" y="298" text-anchor="middle" font-size="12" fill="#1b5e20">值或异常都进，产出新类型</text>
+</svg>

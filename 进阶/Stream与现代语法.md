@@ -197,7 +197,27 @@ long ok = urls.parallelStream()
 
 ---
 
-## 九、反模式
+## 九、手写 Collector，和 Spliterator 怎么切
+
+`Collector.of(supplier, accumulator, combiner, finisher, characteristics...)`。并行流每片一个容器，最后 `combiner` 合成。`IDENTITY_FINISH` 表示 finisher 是恒等，可以省一次拷贝。`UNORDERED` 允许打乱 encounter order。`CONCURRENT` 表示一个容器可被多线程 accumulator 同时拧——源也必须是并发的，否则干扰。
+
+```java
+Collector<String, StringBuilder, String> joining2 = Collector.of(
+        StringBuilder::new,
+        StringBuilder::append,
+        (a, b) -> { a.append(b); return a; },
+        StringBuilder::toString);
+```
+
+combiner 必须把 b 并进 a **或** 返回新对象，不能两个线程 append 同一个 builder 却不标 `CONCURRENT`。`joining` 官方实现不是这么简陋，但合同就是这四件套。
+
+`Spliterator` 是并行切分的口。`trySplit` 返回后半段，自己留下前半；切不动返回 null。`ArrayList` 的 spliterator 按下标对半切，有序、`SIZED`、`SUBSIZED`。`HashSet` 的无序。`tryAdvance` 消费一个；`estimateSize` 给 fork 决策。自己写流源（树、图）不实现合理的 `trySplit`，`parallel()` 等于白写，所有工作仍在一个 worker 上。
+
+`StreamSupport.stream(spliterator, parallel)` 从自定义切分器造流。不要从 `Iterator` 硬包一层还开 parallel——`Iterator` 不能高效 split，并行度出不来。
+
+---
+
+## 十、反模式
 
 - 造了 Stream 不接终端操作，以为 `filter` 已经跑了。
 - 一条流走两次。
@@ -211,4 +231,4 @@ long ok = urls.parallelStream()
 - `sorted()` 接在无穷流上。
 - 用 `peek` 写业务副作用。
 
-进阶四篇到此。下面用 JDK 自带的 `HttpServer` 和虚拟线程，把这些规则收进一个能跑的服务，不引入 Spring。
+进阶主线到此。反射、AQS、CompletableFuture、NIO 与虚拟线程是另外四篇。实战用 JDK `HttpServer` + 虚拟线程把这些规则收进能 `javac` 的代码，不引入 Spring。

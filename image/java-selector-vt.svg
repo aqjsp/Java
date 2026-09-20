@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 360" width="920" height="360" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="360" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">21：阻塞 Socket + 虚拟线程是默认；Selector 不是「更高级」</text>
+  <rect x="40" y="56" width="400" height="260" rx="10" fill="#fff" stroke="#2e7d32" stroke-width="2"/>
+  <text x="240" y="88" text-anchor="middle" font-size="15" font-weight="700" fill="#1b5e20">虚拟线程 + 阻塞 I/O</text>
+  <text x="240" y="120" text-anchor="middle" font-size="13" fill="#37474f">每连接一条 VT</text>
+  <text x="240" y="148" text-anchor="middle" font-size="13" fill="#37474f">read/write 阻塞时卸载 carrier</text>
+  <text x="240" y="176" text-anchor="middle" font-size="13" fill="#37474f">代码像同步：读、解析、写</text>
+  <text x="240" y="212" text-anchor="middle" font-size="12" fill="#c62828">Java 21：synchronized / native 会钉住</text>
+  <text x="240" y="240" text-anchor="middle" font-size="12" fill="#2e7d32">适合：请求处理、业务 I/O</text>
+  <text x="240" y="268" text-anchor="middle" font-size="12" fill="#546e7a">JEP 444：不池化虚拟线程</text>
+  <rect x="480" y="56" width="400" height="260" rx="10" fill="#fff" stroke="#1565c0" stroke-width="2"/>
+  <text x="680" y="88" text-anchor="middle" font-size="15" font-weight="700" fill="#1565c0">Selector 多路复用</text>
+  <text x="680" y="120" text-anchor="middle" font-size="13" fill="#37474f">少量平台线程盯一堆 channel</text>
+  <text x="680" y="148" text-anchor="middle" font-size="13" fill="#37474f">select 返回就绪集合</text>
+  <text x="680" y="176" text-anchor="middle" font-size="13" fill="#37474f">状态机自己拆：读一半、写一半</text>
+  <text x="680" y="212" text-anchor="middle" font-size="12" fill="#1565c0">适合：海量空闲连接、网关、非 VT 运行时</text>
+  <text x="680" y="240" text-anchor="middle" font-size="12" fill="#c62828">selectedKeys 不是线程安全的</text>
+  <text x="680" y="268" text-anchor="middle" font-size="12" fill="#546e7a">wakeup 才能把别人的 select 拉起来</text>
+  <text x="460" y="340" text-anchor="middle" font-size="12" fill="#37474f">两套叠在一起：虚拟线程里再 select，既钉模型又丢可读性</text>
+</svg>

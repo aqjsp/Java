@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 340" width="920" height="340" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="340" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">Proxy：只能接口；调用进 InvocationHandler.invoke</text>
+  <rect x="40" y="56" width="200" height="70" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="140" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#1565c0">调用方</text>
+  <text x="140" y="108" text-anchor="middle" font-size="11" fill="#1565c0">((Foo)proxy).bar()</text>
+  <rect x="300" y="56" width="280" height="70" rx="8" fill="#fff3e0" stroke="#e65100"/>
+  <text x="440" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#e65100">JDK 生成的代理类</text>
+  <text x="440" y="108" text-anchor="middle" font-size="11" fill="#e65100">implements Foo　不是 Foo 的子类</text>
+  <rect x="640" y="56" width="240" height="70" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="760" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#2e7d32">handler.invoke</text>
+  <text x="760" y="108" text-anchor="middle" font-size="11" fill="#2e7d32">proxy, Method, args</text>
+  <path d="M240 91 L300 91" stroke="#1565c0" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M580 91 L640 91" stroke="#e65100" stroke-width="2"/>
+  <rect x="40" y="160" width="840" height="140" rx="8" fill="#eceff1" stroke="#90a4ae"/>
+  <text x="460" y="190" text-anchor="middle" font-size="13" fill="#37474f">equals / hashCode / toString 也进 handler，不是 Object 默认实现</text>
+  <text x="460" y="218" text-anchor="middle" font-size="13" fill="#37474f">default 方法要用 InvocationHandler.invokeDefault，不会自动走接口体</text>
+  <text x="460" y="246" text-anchor="middle" font-size="13" fill="#c62828">newProxyInstance 的第二参数必须是接口。类代理要改字节码（cglib / ByteBuddy）</text>
+  <text x="460" y="274" text-anchor="middle" font-size="12" fill="#546e7a">加载器、接口访问级别决定生成类落在哪个运行时包 / 模块</text>
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1565c0"/></marker></defs>
+</svg>
