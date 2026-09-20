@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="900" height="400" rx="12" fill="#fafafa"/>
+  <text x="450" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">invokevirtual：看运行时类型，不看声明类型</text>
+  <rect x="36" y="56" width="250" height="72" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="161" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#1565c0">Animal a = new Dog();</text>
+  <text x="161" y="108" text-anchor="middle" font-size="11" fill="#1565c0">静态 Animal · 动态 Dog</text>
+  <rect x="320" y="56" width="220" height="72" rx="8" fill="#fff3e0" stroke="#e65100"/>
+  <text x="430" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#e65100">a.speak()</text>
+  <text x="430" y="108" text-anchor="middle" font-size="11" fill="#e65100">字节码 invokevirtual</text>
+  <rect x="574" y="48" width="290" height="88" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="719" y="78" text-anchor="middle" font-size="13" font-weight="700" fill="#2e7d32">查 Dog 的 vtable</text>
+  <text x="719" y="100" text-anchor="middle" font-size="11" fill="#2e7d32">命中 Dog.speak</text>
+  <text x="719" y="120" text-anchor="middle" font-size="11" fill="#2e7d32">private/static/final 不走这条</text>
+  <rect x="36" y="168" width="400" height="196" rx="10" fill="#fff" stroke="#90a4ae"/>
+  <text x="236" y="196" text-anchor="middle" font-size="13" font-weight="700" fill="#37474f">Animal klass</text>
+  <rect x="66" y="216" width="340" height="32" rx="4" fill="#eceff1"/>
+  <text x="236" y="238" text-anchor="middle" font-size="12" fill="#455a64">[0] speak → Animal.speak</text>
+  <rect x="66" y="258" width="340" height="32" rx="4" fill="#eceff1"/>
+  <text x="236" y="280" text-anchor="middle" font-size="12" fill="#455a64">[1] toString → Object.toString</text>
+  <text x="236" y="328" text-anchor="middle" font-size="11" fill="#78909c">接口默认方法：itable</text>
+  <text x="236" y="348" text-anchor="middle" font-size="11" fill="#78909c">lambda：invokedynamic</text>
+  <rect x="464" y="168" width="400" height="196" rx="10" fill="#fff" stroke="#2e7d32"/>
+  <text x="664" y="196" text-anchor="middle" font-size="13" font-weight="700" fill="#2e7d32">Dog klass</text>
+  <rect x="494" y="216" width="340" height="32" rx="4" fill="#c8e6c9"/>
+  <text x="664" y="238" text-anchor="middle" font-size="12" fill="#1b5e20">[0] speak → Dog.speak（覆盖）</text>
+  <rect x="494" y="258" width="340" height="32" rx="4" fill="#eceff1"/>
+  <text x="664" y="280" text-anchor="middle" font-size="12" fill="#455a64">[1] toString → Object.toString</text>
+  <text x="664" y="328" text-anchor="middle" font-size="11" fill="#2e7d32">覆盖改同一槽；重载在编译期按静态类型选签名</text>
+  <text x="664" y="348" text-anchor="middle" font-size="11" fill="#2e7d32">record 的访问器是 final，不能覆盖成别的语义</text>
+</svg>

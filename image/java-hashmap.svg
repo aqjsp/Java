@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 400" width="920" height="400" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="400" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">HashMap：equals 相等则 hashCode 必须相等</text>
+  <rect x="24" y="52" width="872" height="44" rx="8" fill="#eceff1" stroke="#90a4ae"/>
+  <text x="460" y="80" text-anchor="middle" font-size="13" fill="#37474f">index = (n-1) &amp; hash　　n=2^k，默认容量 16，负载因子 0.75</text>
+  <rect x="36" y="120" width="130" height="230" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="101" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#1565c0">桶数组</text>
+  <rect x="51" y="168" width="100" height="28" rx="4" fill="#fff" stroke="#1565c0"/>
+  <text x="101" y="188" text-anchor="middle" font-size="11" fill="#1565c0">[0]</text>
+  <rect x="51" y="204" width="100" height="28" rx="4" fill="#bbdefb" stroke="#0d47a1"/>
+  <text x="101" y="224" text-anchor="middle" font-size="11" fill="#0d47a1">[1] 冲突</text>
+  <rect x="51" y="240" width="100" height="28" rx="4" fill="#fff" stroke="#1565c0"/>
+  <text x="101" y="260" text-anchor="middle" font-size="11" fill="#1565c0">[2]</text>
+  <text x="101" y="300" text-anchor="middle" font-size="10" fill="#546e7a">扩容翻倍</text>
+  <text x="101" y="320" text-anchor="middle" font-size="10" fill="#546e7a">上限 2^30</text>
+  <rect x="190" y="140" width="300" height="200" rx="8" fill="#fff3e0" stroke="#e65100"/>
+  <text x="340" y="172" text-anchor="middle" font-size="12" font-weight="700" fill="#e65100">链表（树化前）</text>
+  <rect x="210" y="190" width="260" height="36" rx="4" fill="#ffe0b2"/>
+  <text x="340" y="214" text-anchor="middle" font-size="12" fill="#bf360c">Node(k1,v1) →</text>
+  <rect x="210" y="236" width="260" height="36" rx="4" fill="#ffe0b2"/>
+  <text x="340" y="260" text-anchor="middle" font-size="12" fill="#bf360c">Node(k2,v2)</text>
+  <text x="340" y="310" text-anchor="middle" font-size="11" fill="#e65100">同桶先比 hash，再 == / equals</text>
+  <rect x="520" y="140" width="370" height="200" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="705" y="172" text-anchor="middle" font-size="12" font-weight="700" fill="#2e7d32">树化条件（OpenJDK 21）</text>
+  <text x="705" y="210" text-anchor="middle" font-size="13" fill="#1b5e20">桶内节点 ≥ 8 且表容量 ≥ 64</text>
+  <text x="705" y="238" text-anchor="middle" font-size="13" fill="#1b5e20">→ 红黑树 TreeNode</text>
+  <text x="705" y="270" text-anchor="middle" font-size="13" fill="#1b5e20">resize 后节点 ≤ 6 → 退回链表</text>
+  <text x="705" y="308" text-anchor="middle" font-size="11" fill="#2e7d32">容量 &lt; 64 时宁扩容不树化</text>
+  <text x="460" y="382" text-anchor="middle" font-size="11" fill="#78909c">允许 null key / null value；非线程安全。可变对象当 key 且改了 hash 字段 → 丢桶</text>
+</svg>

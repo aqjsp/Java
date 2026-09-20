@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 360" width="920" height="360" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="360" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">Java 9+ 三层内置加载器（bootstrap 在 Java 里是 null）</text>
+  <rect x="60" y="60" width="800" height="70" rx="10" fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>
+  <text x="460" y="90" text-anchor="middle" font-size="14" font-weight="700" fill="#1565c0">Bootstrap　parent = 没有</text>
+  <text x="460" y="114" text-anchor="middle" font-size="12" fill="#1565c0">java.base 等，ClassLoader.getParent() 为 null</text>
+  <rect x="60" y="150" width="800" height="70" rx="10" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="460" y="180" text-anchor="middle" font-size="14" font-weight="700" fill="#e65100">Platform　getPlatformClassLoader()</text>
+  <text x="460" y="204" text-anchor="middle" font-size="12" fill="#e65100">Java SE API 实现类、JDK 运行时类</text>
+  <rect x="60" y="240" width="800" height="70" rx="10" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="460" y="270" text-anchor="middle" font-size="14" font-weight="700" fill="#2e7d32">System / Application　getSystemClassLoader()</text>
+  <text x="460" y="294" text-anchor="middle" font-size="12" fill="#2e7d32">classpath / module path 上的应用类；parent 是 platform 或其祖先</text>
+  <text x="460" y="340" text-anchor="middle" font-size="12" fill="#37474f">loadClass：先委派 parent，找不到再自己 defineClass。SPI 需要打破委派，进类加载篇</text>
+</svg>

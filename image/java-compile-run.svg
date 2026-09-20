@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 380" width="920" height="380" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="380" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">从 .java 到跑起来：javac → class → 类加载 → 解释/JIT</text>
+  <rect x="24" y="56" width="160" height="78" rx="10" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="104" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#1565c0">.java</text>
+  <text x="104" y="112" text-anchor="middle" font-size="11" fill="#546e7a">UTF-8 源码</text>
+  <rect x="214" y="56" width="160" height="78" rx="10" fill="#fff3e0" stroke="#e65100"/>
+  <text x="294" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#e65100">javac</text>
+  <text x="294" y="112" text-anchor="middle" font-size="11" fill="#e65100">标注处理 · 类型检查</text>
+  <rect x="404" y="56" width="180" height="78" rx="10" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="494" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#2e7d32">.class</text>
+  <text x="494" y="112" text-anchor="middle" font-size="11" fill="#2e7d32">CAFEBABE · 常量池</text>
+  <rect x="614" y="56" width="280" height="78" rx="10" fill="#f3e5f5" stroke="#6a1b9a"/>
+  <text x="754" y="84" text-anchor="middle" font-size="13" font-weight="700" fill="#6a1b9a">类加载器</text>
+  <text x="754" y="106" text-anchor="middle" font-size="11" fill="#6a1b9a">加载 · 链接 · 初始化</text>
+  <text x="754" y="124" text-anchor="middle" font-size="11" fill="#6a1b9a">元数据进 Metaspace</text>
+  <rect x="80" y="180" width="760" height="160" rx="10" fill="#eceff1" stroke="#546e7a"/>
+  <text x="460" y="212" text-anchor="middle" font-size="14" font-weight="700" fill="#37474f">HotSpot 执行（默认没有 AOT 全量编译）</text>
+  <rect x="120" y="236" width="300" height="70" rx="8" fill="#cfd8dc" stroke="#455a64"/>
+  <text x="270" y="266" text-anchor="middle" font-size="13" fill="#263238">解释器先跑字节码</text>
+  <text x="270" y="288" text-anchor="middle" font-size="11" fill="#546e7a">调用计数 / 回边计数升温</text>
+  <rect x="500" y="236" width="300" height="70" rx="8" fill="#ffccbc" stroke="#d84315"/>
+  <text x="650" y="266" text-anchor="middle" font-size="13" fill="#bf360c">C1 / C2 编成本地码</text>
+  <text x="650" y="288" text-anchor="middle" font-size="11" fill="#e64a19">假设失效 → 去优化回解释</text>
+  <text x="460" y="360" text-anchor="middle" font-size="11" fill="#78909c">java 启动器加载主类、调 main；jlink 可裁出自定义运行时，那是进阶篇</text>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 380" width="920" height="380" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="380" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">平台线程 1:1 占 OS 线程；虚拟线程 M:N 不绑死</text>
+  <rect x="28" y="56" width="420" height="280" rx="12" fill="#fff" stroke="#c62828" stroke-width="2"/>
+  <text x="238" y="88" text-anchor="middle" font-size="15" font-weight="700" fill="#b71c1c">平台线程（JEP 444 之前的 Thread）</text>
+  <rect x="58" y="112" width="160" height="56" rx="8" fill="#ffcdd2" stroke="#c62828"/>
+  <text x="138" y="146" text-anchor="middle" font-size="13" fill="#b71c1c">java.lang.Thread</text>
+  <rect x="258" y="112" width="160" height="56" rx="8" fill="#ef9a9a" stroke="#c62828"/>
+  <text x="338" y="146" text-anchor="middle" font-size="13" fill="#b71c1c">OS thread</text>
+  <text x="238" y="200" text-anchor="middle" font-size="12" fill="#37474f">一生占用一条 OS 线程</text>
+  <text x="238" y="228" text-anchor="middle" font-size="12" fill="#37474f">数量受内核线程上限约束</text>
+  <text x="238" y="264" text-anchor="middle" font-size="12" fill="#c62828">阻塞 I/O = 这条 OS 线程也停</text>
+  <text x="238" y="292" text-anchor="middle" font-size="11" fill="#78909c">Thread.start() 默认仍是平台线程</text>
+  <rect x="472" y="56" width="420" height="280" rx="12" fill="#fff" stroke="#2e7d32" stroke-width="2"/>
+  <text x="682" y="88" text-anchor="middle" font-size="15" font-weight="700" fill="#1b5e20">虚拟线程（Java 21）</text>
+  <rect x="500" y="112" width="110" height="44" rx="6" fill="#c8e6c9" stroke="#2e7d32"/>
+  <text x="555" y="140" text-anchor="middle" font-size="12" fill="#1b5e20">VT</text>
+  <rect x="628" y="112" width="110" height="44" rx="6" fill="#c8e6c9" stroke="#2e7d32"/>
+  <text x="683" y="140" text-anchor="middle" font-size="12" fill="#1b5e20">VT</text>
+  <rect x="756" y="112" width="110" height="44" rx="6" fill="#c8e6c9" stroke="#2e7d32"/>
+  <text x="811" y="140" text-anchor="middle" font-size="12" fill="#1b5e20">VT …</text>
+  <rect x="560" y="180" width="240" height="44" rx="6" fill="#a5d6a7" stroke="#1b5e20"/>
+  <text x="680" y="208" text-anchor="middle" font-size="12" fill="#1b5e20">少量 carrier OS 线程</text>
+  <text x="682" y="252" text-anchor="middle" font-size="12" fill="#37474f">阻塞时卸载，carrier 去跑别人</text>
+  <text x="682" y="280" text-anchor="middle" font-size="12" fill="#c62828">Java 21：synchronized 会钉住 carrier</text>
+  <text x="682" y="304" text-anchor="middle" font-size="11" fill="#78909c">API 仍是 Thread；Thread.startVirtualThread</text>
+  <text x="460" y="360" text-anchor="middle" font-size="11" fill="#546e7a">不是 green thread 的 M:1。也不是 Go 的 GMP 三层，没有独立的 P 对象给用户摸</text>
+</svg>

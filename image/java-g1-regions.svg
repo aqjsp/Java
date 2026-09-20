@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 400" width="920" height="400" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="400" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">G1：堆切成 Region，年轻代不连续</text>
+  <rect x="40" y="56" width="840" height="240" rx="8" fill="#eceff1" stroke="#90a4ae"/>
+  <rect x="60" y="80" width="90" height="70" rx="6" fill="#ef9a9a" stroke="#c62828"/>
+  <text x="105" y="112" text-anchor="middle" font-size="12" fill="#b71c1c">Eden</text>
+  <text x="105" y="132" text-anchor="middle" font-size="10" fill="#b71c1c">红</text>
+  <rect x="160" y="80" width="90" height="70" rx="6" fill="#90caf9" stroke="#1565c0"/>
+  <text x="205" y="112" text-anchor="middle" font-size="12" fill="#0d47a1">Old</text>
+  <rect x="260" y="80" width="90" height="70" rx="6" fill="#ef9a9a" stroke="#c62828"/>
+  <text x="305" y="112" text-anchor="middle" font-size="12" fill="#b71c1c">Eden</text>
+  <rect x="360" y="80" width="90" height="70" rx="6" fill="#ef9a9a" stroke="#c62828"/>
+  <text x="405" y="108" text-anchor="middle" font-size="12" fill="#b71c1c">S</text>
+  <text x="405" y="128" text-anchor="middle" font-size="10" fill="#b71c1c">Survivor</text>
+  <rect x="460" y="80" width="90" height="70" rx="6" fill="#90caf9" stroke="#1565c0"/>
+  <text x="505" y="108" text-anchor="middle" font-size="12" fill="#0d47a1">H</text>
+  <text x="505" y="128" text-anchor="middle" font-size="10" fill="#0d47a1">Humongous</text>
+  <rect x="560" y="80" width="90" height="70" rx="6" fill="#cfd8dc" stroke="#546e7a"/>
+  <text x="605" y="112" text-anchor="middle" font-size="12" fill="#37474f">free</text>
+  <rect x="660" y="80" width="90" height="70" rx="6" fill="#90caf9" stroke="#1565c0"/>
+  <text x="705" y="112" text-anchor="middle" font-size="12" fill="#0d47a1">Old</text>
+  <rect x="760" y="80" width="90" height="70" rx="6" fill="#ef9a9a" stroke="#c62828"/>
+  <text x="805" y="112" text-anchor="middle" font-size="12" fill="#b71c1c">Eden</text>
+  <text x="460" y="180" text-anchor="middle" font-size="12" fill="#37474f">普通对象进 Eden；跨多个 Region 的大对象直接当 Humongous，算老年代</text>
+  <text x="460" y="208" text-anchor="middle" font-size="12" fill="#37474f">Young GC：拷活对象到 Survivor / Old。Mixed：Young + 一组 Old 一起疏散</text>
+  <text x="460" y="236" text-anchor="middle" font-size="12" fill="#37474f">并发标记：Remark / Cleanup 是 STW；扛不住才 Full GC 整堆压缩</text>
+  <rect x="40" y="316" width="840" height="56" rx="8" fill="#fff3e0" stroke="#e65100"/>
+  <text x="460" y="350" text-anchor="middle" font-size="13" fill="#e65100">停顿目标默认 200ms（-XX:MaxGCPauseMillis），是目标不是硬实时保证</text>
+</svg>

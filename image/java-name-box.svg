@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 360" width="920" height="360" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="360" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">Java 变量：基本类型是盒子，引用类型是指针</text>
+  <rect x="28" y="56" width="280" height="270" rx="10" fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>
+  <text x="168" y="86" text-anchor="middle" font-size="14" font-weight="700" fill="#1565c0">栈帧 · 局部变量表</text>
+  <rect x="48" y="108" width="240" height="40" rx="6" fill="#fff" stroke="#1565c0"/>
+  <text x="168" y="134" text-anchor="middle" font-size="13" fill="#1565c0">int a = 1　盒子里就是 1</text>
+  <rect x="48" y="160" width="240" height="40" rx="6" fill="#fff" stroke="#1565c0"/>
+  <text x="168" y="186" text-anchor="middle" font-size="13" fill="#1565c0">List b  ——→  堆上对象</text>
+  <rect x="48" y="212" width="240" height="40" rx="6" fill="#fff" stroke="#1565c0"/>
+  <text x="168" y="238" text-anchor="middle" font-size="13" fill="#1565c0">List c = b　只复制引用</text>
+  <text x="168" y="286" text-anchor="middle" font-size="11" fill="#546e7a">JLS 4.1：值分 primitive / reference</text>
+  <text x="168" y="306" text-anchor="middle" font-size="11" fill="#546e7a">null 只能赋给引用类型</text>
+  <rect x="500" y="56" width="390" height="270" rx="10" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="695" y="86" text-anchor="middle" font-size="14" font-weight="700" fill="#e65100">堆</text>
+  <rect x="530" y="112" width="330" height="80" rx="8" fill="#ffe0b2" stroke="#e65100"/>
+  <text x="695" y="146" text-anchor="middle" font-size="13" font-weight="700" fill="#bf360c">ArrayList 实例</text>
+  <text x="695" y="170" text-anchor="middle" font-size="11" fill="#e65100">mark word · klass · elementData</text>
+  <rect x="530" y="210" width="330" height="70" rx="8" fill="#c8e6c9" stroke="#2e7d32"/>
+  <text x="695" y="240" text-anchor="middle" font-size="13" font-weight="700" fill="#1b5e20">Integer 缓存对象</text>
+  <text x="695" y="262" text-anchor="middle" font-size="11" fill="#2e7d32">装箱常量 -128..127 保证 ==</text>
+  <path d="M268 180 L528 152" stroke="#1565c0" stroke-width="2"/>
+  <path d="M268 232 L528 160" stroke="#1565c0" stroke-width="2"/>
+  <text x="460" y="348" text-anchor="middle" font-size="11" fill="#78909c">对照：C++/Go 的 int 是盒子；Python 的 a=1 是把名字绑到堆对象</text>
+</svg>

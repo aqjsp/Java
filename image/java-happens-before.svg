@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 360" width="920" height="360" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="920" height="360" rx="12" fill="#fafafa"/>
+  <text x="460" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a2e">happens-before：可见性来自同步边，不是墙上时钟</text>
+  <rect x="30" y="56" width="270" height="260" rx="10" fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>
+  <text x="165" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#1565c0">线程 A</text>
+  <rect x="50" y="108" width="230" height="40" rx="6" fill="#fff" stroke="#1565c0"/>
+  <text x="165" y="134" text-anchor="middle" font-size="12" fill="#1565c0">1. 写 x = 1</text>
+  <rect x="50" y="160" width="230" height="40" rx="6" fill="#bbdefb" stroke="#0d47a1"/>
+  <text x="165" y="186" text-anchor="middle" font-size="12" fill="#0d47a1">2. unlock M / 写 volatile v</text>
+  <text x="165" y="230" text-anchor="middle" font-size="11" fill="#546e7a">程序序：1 hb 2</text>
+  <text x="165" y="254" text-anchor="middle" font-size="11" fill="#546e7a">JLS 17.4.5</text>
+  <rect x="620" y="56" width="270" height="260" rx="10" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="755" y="86" text-anchor="middle" font-size="13" font-weight="700" fill="#2e7d32">线程 B</text>
+  <rect x="640" y="108" width="230" height="40" rx="6" fill="#c8e6c9" stroke="#1b5e20"/>
+  <text x="755" y="134" text-anchor="middle" font-size="12" fill="#1b5e20">3. lock M / 读 volatile v</text>
+  <rect x="640" y="160" width="230" height="40" rx="6" fill="#fff" stroke="#2e7d32"/>
+  <text x="755" y="186" text-anchor="middle" font-size="12" fill="#2e7d32">4. 读 x　必须看见 1</text>
+  <text x="755" y="230" text-anchor="middle" font-size="11" fill="#546e7a">3 hb 4（程序序）</text>
+  <text x="755" y="254" text-anchor="middle" font-size="11" fill="#546e7a">2 synchronizes-with 3</text>
+  <rect x="320" y="130" width="280" height="110" rx="10" fill="#fff3e0" stroke="#e65100"/>
+  <text x="460" y="164" text-anchor="middle" font-size="13" font-weight="700" fill="#e65100">传递：1 hb 2 hb 3 hb 4</text>
+  <text x="460" y="190" text-anchor="middle" font-size="12" fill="#bf360c">没有这条边，读 x 是 data race</text>
+  <text x="460" y="214" text-anchor="middle" font-size="11" fill="#e65100">start() / join() / 构造结束→finalize 也是边</text>
+  <text x="460" y="340" text-anchor="middle" font-size="12" fill="#37474f">synchronized 同一 monitor 的 unlock hb 后续 lock；volatile 写 hb 后续读</text>
+</svg>
