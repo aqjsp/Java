@@ -135,19 +135,4 @@ TLS：`SSLSocket` 阻塞 API 在 VT 上同样走卸载（21 的多数路径）�
 
 同一条连接同时要读和写：Selector 把 `interestOps` 设成 `OP_READ | OP_WRITE`，写缓冲空了要去掉 `OP_WRITE` 否则 busy loop。VT 模型两条方向可以在同一条虚拟线程里交替，或拆成读线程/写线程但同一 Socket 的阻塞流不是线程安全的——`InputStream`/`OutputStream` 文档没给你并发合同，读写拆线程要自己同步，或用 `SocketChannel` + 明确的协议。
 
----
 
-## 七、反模式
-
-- `channel.write(buf)` 只调一次当写完。
-- `selectedKeys` 不 `remove`。
-- 阻塞 channel 上 `register`。
-- 多线程一起搓 `selectedKeys`。
-- 虚拟线程热路径 `synchronized` 包着 `read`。
-- 给 VT 做池。
-- 在 EventLoop / Selector 线程里做阻塞 JDBC。
-- VT 里再开 Selector「双保险」。
-- 每请求 `ByteBuffer.allocateDirect(1<<20)`。
-- 把 backlog 当最大连接数。
-
-进阶宽度补到这里。下面把旧篇里科班还答不出的那些点补上：`javap` 对 boxing、`treeifyBin` 逐步推、JIT 去优化、自定义加载器、手写 Collector。然后实战落到能 `javac` 的 `src/`。

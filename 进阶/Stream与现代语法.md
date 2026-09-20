@@ -226,20 +226,4 @@ combiner 若写成 `(a, b) -> { a.append(b); return a; }` 且不标 `CONCURRENT`
 
 `StreamSupport.stream(spliterator, parallel)` 从自定义切分器造流。不要从 `Iterator` 硬包一层还开 parallel——`Iterator` 不能高效 split，并行度出不来。
 
----
-
-## 十、反模式
-
-- 造了 Stream 不接终端操作，以为 `filter` 已经跑了。
-- 一条流走两次。
-- `parallelStream()` 里做 I/O 或抢锁。
-- `forEach` 往共享 `ArrayList` add。
-- 流水线执行中改源 List。
-- Optional 当字段、当参数、`return null`。
-- `orElse(new Costly())` 每次都 new，该用 `orElseGet`。
-- 模式匹配 switch 不穷尽，靠运行时 default 混。
-- 老 switch 的 fall-through 写进 pattern case。
-- `sorted()` 接在无穷流上。
-- 用 `peek` 写业务副作用。
-
 进阶主线到此。反射、AQS、CompletableFuture、NIO 与虚拟线程是另外四篇。实战用 JDK `HttpServer` + 虚拟线程把这些规则收进能 `javac` 的代码，不引入 Spring。

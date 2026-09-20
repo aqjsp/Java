@@ -497,19 +497,4 @@ areturn
 | 字符串 | `std::string` 可变 | `string` 不可变，字节 | 不可变，码点 | 不可变，UTF-16 code unit |
 | 数组越界 | UB | panic | IndexError | `ArrayIndexOutOfBoundsException` |
 
----
-
-## 十、反模式
-
-- 用 `==` 比 `Integer` / `String`。
-- `new Integer(n)`。走 `valueOf` 或自动装箱。
-- 局部变量依赖「反正是 0」。字段才有默认值。
-- 热路径 `List<Integer>` 做算术。
-- `char` 当「一个字」；按 `length()` 截断 Unicode。
-- 主类塞未命名包，然后奇怪为什么别人 import 不了。
-- `new BigDecimal(0.1)` 当钱。
-- `int n = map.get(k);` 不看 get 是否 null。
-- 三元运算符一边 `Integer` 一边 `int`，拆箱 NPE。
-- 靠「我本地 `128 == 128` 是 true」写业务——那是你把 `AutoBoxCacheMax` 抬过了 128，换台机器就碎。
-
 下一篇把 class、interface、record、enum、分派和 `equals`/`hashCode` 钉完。类型体系对了，对象模型才能谈。

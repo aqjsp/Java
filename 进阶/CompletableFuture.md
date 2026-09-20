@@ -176,17 +176,4 @@ CompletableFuture.allOf(fs.toArray(CompletableFuture[]::new)).join();
 
 把 `httpGet` 换成纯 CPU 哈希，commonPool 才是对的工具。I/O 和默认执行器叠在一起，是把线程池模型用错。
 
----
-
-## 八、反模式
-
-- `supplyAsync(blockingIo)` 不传 Executor。
-- `thenApply(x -> otherCf(x))` 得到 CF&lt;CF&lt;T&gt;&gt;，该用 `thenCompose`。
-- `allOf` 失败当「其余任务已经停了」。
-- `cancel(true)` 当中断。CF 不中断在跑的 Supplier。
-- `whenComplete` 里抛异常当恢复。
-- `thenApply` 回调里再做 HTTP，占住 `complete` 的那个线程。
-- 和 `parallelStream` 同时打满 commonPool，再怪 GC。
-- `orTimeout` 当取消 I/O。它只让 CF 异常完成。
-
 下一篇把 Selector 和虚拟线程阻塞 I/O 的边界钉完。CF 解决任务图；连接怎么读字节，21 默认已经不是「必须 NIO 多路复用」。

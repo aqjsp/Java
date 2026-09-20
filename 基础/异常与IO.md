@@ -246,22 +246,4 @@ try (InputStream in = Files.newInputStream(src);
 
 SocketChannel 一次 `write` 写不完、Selector 的循环，进「网络 NIO 与虚拟线程」。这里只记：`IOException` 是 checked，网络超时是 `SocketTimeoutException`（它是 IOException 子类），中断读可能是 `InterruptedIOException`，空 catch 会把取消和真错误搅在一起。
 
----
-
-## 九、反模式
-
-- `e.printStackTrace()` 当错误处理。
-- `catch (Exception e) { throw new RuntimeException(e); }` 无说明地剥掉 checked。
-- `catch (InterruptedException e) {}` 空。
-- `new FileInputStream` 不关。用 try-with-resources。
-- 依赖默认 charset。
-- 用 `File.renameTo` 当原子提交。返回 `boolean` 还不抛原因；换 `Files.move`。
-- `channel.write(buf)` 之前忘了 `flip`。
-- 把 `clear` 当「把内容填零」。它只改指针。
-- `channel.write` 只调一次就当写完。
-- finally 里 `return`。
-- 热路径 `throw new` 当分支。
-- `getBytes()` / `FileReader` 依赖默认 charset。
-- 对外协议用 Java 序列化还不写 UID。
-
 基础四篇到此。进阶从内存模型开始：没有 happens-before，上面这些对象在两个线程之间读到什么，规范不保证。

@@ -83,13 +83,4 @@ id 用 `UUID.randomUUID()`，单进程够。CHM 不许 null value；record 里 `
 - 类加载：有包名；`jdk.httpserver` 在模块图里
 - 网络：阻塞 I/O + VT，不在 handler 里叠 Selector
 
----
 
-## 七、反模式
-
-- handler 里 `new Thread().start()` 或再包一层有界队列「保护」虚拟线程
-- `synchronized (store)` 锁整张 map
-- `Content-Length` 用 `json.length()`
-- `sendResponseHeaders` 之后改状态码
-- 绑定 `0.0.0.0` 还开着无鉴权 POST
-- 文档里复制一份和 `src/` 不一致的代码

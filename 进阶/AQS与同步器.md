@@ -35,9 +35,21 @@ Release:
 
 AQS **不理解** 独占和共享的业务差别，只机械地：独占成功则别人不能成功；共享成功则后继若也是共享，要再问一次能不能拿。两种模式的等待者排在 **同一条 FIFO** 上。
 
-**队列。** 注释写明基于内部 FIFO，但 **不自动执行 FIFO 获取策略**。公平要子类自己做。CLH 队列需要一个 dummy 头；AQS **构造时不建**，第一次争用才把 `head`/`tail` 立起来。没争用的锁，就是一个 `state`，没有节点对象。
+**队列。** 注释写明基于内部 FIFO，但 **不自动执行 FIFO 获取策略**。公平要子类自己做。OpenJDK 21 的 AQS 把入队和 park 收进一个 `acquire(Node, arg, shared, …)`：先 `tryAcquire`，失败才建节点、链到 `tail`、`LockSupport.park`。头结点是哨兵，**第一次争用才建**，没争用的锁就是一个 `state`。类注释原句：checks in acquire are invoked **before** enqueuing, a newly acquiring thread may **barge** ahead of others that are blocked and queued。非公平就是利用了「先 try 再入队」这个窗口；公平在 `tryAcquire` 里调 `hasQueuedPredecessors`，窗口在，但不让 CAS 成功。
 
-节点里记：等待的线程、独占还是共享、后继。取消的节点从链上摘。`unparkSuccessor` 叫醒头后面第一个有效后继。
+```java
+public final boolean hasQueuedPredecessors() {
+    Thread first = null; Node h, s;
+    if ((h = head) != null && ((s = h.next) == null ||
+            (first = s.waiter) == null || s.prev == null))
+        first = getFirstQueuedThread();
+    return first != null && first != Thread.currentThread();
+}
+```
+
+`head.next` 是队列里第一个真正等着的线程。它不是当前线程 → 返回 true → FairSync 的 `tryAcquire` 返回 false → 去入队。NonfairSync 的 `initialTryLock` **根本不调这个方法**。
+
+节点里记 waiter 线程、独占还是共享、prev/next。释放时 `signalNext(head)` 叫醒头后面第一个有效后继。21 里方法名是 `signalNext`，不是 8 的 `unparkSuccessor`，干的是同一件事。
 
 ---
 
@@ -187,18 +199,5 @@ lock.lock();   // 非公平：CAS 0→1，B 还在队列里
 表必须变成 B 先拿。C 即使在 A 释放的窗口到达，公平锁也不给它。
 
 再改一行：C 改成 `tryLock()`，即便构造器是 `true`，`tryLock` 仍不走 `hasQueuedPredecessors`，③b 又变回 C 持锁。文档写了：untimed `tryLock()` 不尊重公平。
-
----
-
-## 七、反模式
-
-- 公平锁当「一定按排队顺序跑」，拿它补调度器的公平。吞吐掉一截，饥饿仍可能。
-- `tryLock()` 当公平锁的非阻塞入口。它不尊重公平。
-- 重入三次 `unlock` 一次，后续获取者永远等。
-- `lock()` 之后不用 `finally`。
-- 条件 `if (!ready) await()`，不用 `while`。
-- 读锁升级写锁。同一线程先 `readLock` 再 `writeLock`，死锁。
-- 自己用 `wait/notify` 仿 AQS。许可、取消、中断、搬队列，漏一项就是生产事故。
-- 虚拟线程热路径上用 `synchronized wait` 等条件，Java 21 钉 carrier。
 
 下一篇把 `CompletableFuture` 的依赖边和默认 `commonPool` 钉完。AQS 管的是「同一把锁上谁睡」；CF 管的是「任务之间谁等谁」，默认还抢 ForkJoinPool。
