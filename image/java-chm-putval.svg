@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" width="960" height="360" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="960" height="360" rx="12" fill="#fafafa"/>
+  <text x="480" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e">ConcurrentHashMap putVal：锁粒度是一条桶的头结点</text>
+  <text x="480" y="48" text-anchor="middle" font-size="11" fill="#546e7a">spread(h) = (h ^ h&gt;&gt;&gt;16) &amp; 0x7fffffff　最高位清零，让给 MOVED/-1 TREEBIN/-2 RESERVED/-3</text>
+
+  <rect x="30" y="66" width="220" height="250" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="140" y="92" text-anchor="middle" font-size="13" font-weight="700" fill="#1b5e20">桶为空</text>
+  <text x="140" y="120" text-anchor="middle" font-size="12" fill="#37474f">casTabAt(null → 新节点)</text>
+  <text x="140" y="146" text-anchor="middle" font-size="12" fill="#1b5e20">无锁，一次 CAS</text>
+  <text x="140" y="180" text-anchor="middle" font-size="11" fill="#546e7a">get 全程也无锁</text>
+  <text x="140" y="202" text-anchor="middle" font-size="11" fill="#546e7a">靠 volatile val + tabAt</text>
+
+  <rect x="270" y="66" width="220" height="250" rx="8" fill="#fff3e0" stroke="#e65100"/>
+  <text x="380" y="92" text-anchor="middle" font-size="13" font-weight="700" fill="#e65100">桶头是链表 / 树</text>
+  <text x="380" y="120" text-anchor="middle" font-size="12" fill="#e65100">synchronized (f)</text>
+  <text x="380" y="144" text-anchor="middle" font-size="12" fill="#37474f">只锁这一条桶的头结点</text>
+  <text x="380" y="168" text-anchor="middle" font-size="12" fill="#37474f">别的桶照常读写</text>
+  <text x="380" y="200" text-anchor="middle" font-size="11" fill="#546e7a">fh≥0 链表尾插 / 覆盖</text>
+  <text x="380" y="222" text-anchor="middle" font-size="11" fill="#546e7a">TREEBIN 走红黑树</text>
+
+  <rect x="510" y="66" width="220" height="250" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="620" y="92" text-anchor="middle" font-size="13" font-weight="700" fill="#1565c0">fh == MOVED(-1)</text>
+  <text x="620" y="120" text-anchor="middle" font-size="12" fill="#1565c0">撞上 ForwardingNode</text>
+  <text x="620" y="144" text-anchor="middle" font-size="12" fill="#37474f">helpTransfer 一起搬</text>
+  <text x="620" y="176" text-anchor="middle" font-size="11" fill="#546e7a">扩容是多线程协作</text>
+  <text x="620" y="198" text-anchor="middle" font-size="11" fill="#546e7a">不是一个线程闷头搬</text>
+
+  <rect x="750" y="66" width="180" height="250" rx="8" fill="#eceff1" stroke="#90a4ae"/>
+  <text x="840" y="92" text-anchor="middle" font-size="13" font-weight="700" fill="#37474f">sizeCtl（int）</text>
+  <text x="840" y="120" text-anchor="middle" font-size="11" fill="#37474f">-1：初始化中</text>
+  <text x="840" y="144" text-anchor="middle" font-size="11" fill="#37474f">负：resize 戳 + 协助数</text>
+  <text x="840" y="168" text-anchor="middle" font-size="11" fill="#37474f">正：下次扩容阈值</text>
+  <text x="840" y="200" text-anchor="middle" font-size="11" fill="#546e7a">size 走 CounterCell[]</text>
+  <text x="840" y="222" text-anchor="middle" font-size="11" fill="#546e7a">分段累加，估计值</text>
+
+  <text x="480" y="344" text-anchor="middle" font-size="12" fill="#c62828">「给 HashMap 每个方法加 synchronized」是错的：锁桶头、扩容协作、计数分段、读多无锁</text>
+</svg>

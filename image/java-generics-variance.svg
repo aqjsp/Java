@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 340" width="960" height="340" font-family="system-ui, -apple-system, sans-serif">
+  <rect width="960" height="340" rx="12" fill="#fafafa"/>
+  <text x="480" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e">泛型型变：数组协变留到运行时炸，泛型不变提前到编译期</text>
+
+  <rect x="30" y="52" width="290" height="150" rx="8" fill="#ffcdd2" stroke="#c62828"/>
+  <text x="175" y="78" text-anchor="middle" font-size="13" font-weight="700" fill="#b71c1c">数组：协变</text>
+  <text x="175" y="104" text-anchor="middle" font-size="12" fill="#37474f">String[] 是 Object[] 子类型</text>
+  <text x="175" y="128" text-anchor="middle" font-size="12" fill="#b71c1c">Object[] a = new String[1];</text>
+  <text x="175" y="150" text-anchor="middle" font-size="12" fill="#b71c1c">a[0] = 42; // 编译过</text>
+  <text x="175" y="176" text-anchor="middle" font-size="12" fill="#c62828">运行时 ArrayStoreException</text>
+
+  <rect x="340" y="52" width="290" height="150" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="485" y="78" text-anchor="middle" font-size="13" font-weight="700" fill="#1b5e20">泛型：不变</text>
+  <text x="485" y="104" text-anchor="middle" font-size="12" fill="#37474f">List&lt;String&gt; 不是 List&lt;Object&gt;</text>
+  <text x="485" y="128" text-anchor="middle" font-size="12" fill="#1b5e20">List&lt;Object&gt; lo = strs; // 编译失败</text>
+  <text x="485" y="152" text-anchor="middle" font-size="12" fill="#37474f">错误提前到编译期</text>
+  <text x="485" y="178" text-anchor="middle" font-size="12" fill="#1b5e20">运行时不会 ClassCast</text>
+
+  <rect x="650" y="52" width="280" height="150" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="790" y="78" text-anchor="middle" font-size="13" font-weight="700" fill="#1565c0">通配符开口子（PECS）</text>
+  <text x="790" y="106" text-anchor="middle" font-size="12" fill="#1565c0">? extends Number：能读</text>
+  <text x="790" y="126" text-anchor="middle" font-size="11" fill="#546e7a">Producer，不能 add（除 null）</text>
+  <text x="790" y="152" text-anchor="middle" font-size="12" fill="#1565c0">? super Integer：能写</text>
+  <text x="790" y="172" text-anchor="middle" font-size="11" fill="#546e7a">Consumer，get 只当 Object</text>
+
+  <rect x="30" y="216" width="900" height="104" rx="8" fill="#fff3e0" stroke="#e65100"/>
+  <text x="480" y="244" text-anchor="middle" font-size="14" font-weight="700" fill="#e65100">通配符捕获：swap(List&lt;?&gt;) 里 get/set 各自捕获成不同 CAP，编译失败</text>
+  <text x="480" y="272" text-anchor="middle" font-size="13" fill="#37474f">加私有 &lt;T&gt; helper：调用点把 ? 捕获成同一个 CAP#1，List&lt;?&gt; → List&lt;T&gt;，get/set 同 T</text>
+  <text x="480" y="300" text-anchor="middle" font-size="12" fill="#546e7a">擦除后 T = Object，helper 编成 Object 进出 + 调用方 checkcast。捕获只活在编译期</text>
+</svg>

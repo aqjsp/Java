@@ -219,4 +219,39 @@ void call(Animal a) { a.speak(); }   // 这一个调用点
 
 把这条链路说完，比背「新生代伊甸幸存者」三个词有用。G1 的年轻代根本不必在地址上连续，还用「一块连续 Eden」讲 21，是在讲 Parallel / 更早的收集器。
 
+---
+
+## 十一、OOM 不是一种：看后缀定位
+
+`OutOfMemoryError` 的 message 后缀决定它是哪块内存满了，往哪查。一律 `-Xmx` 加大是乱撞。
+
+| message 后缀 | 哪块 | 典型原因 | 怎么查 / 怎么修 |
+| --- | --- | --- | --- |
+| `Java heap space` | 堆 | 真占满：缓存无界、大集合、内存泄漏 | `-XX:+HeapDumpOnOutOfMemoryError` 出 dump，MAT/JFR 看谁占最多；泄漏看 GC Roots 到大对象的链 |
+| `GC overhead limit exceeded` | 堆 | 花 >98% 时间 GC 只回收 <2%，堆快满但没彻底满 | 同上，本质是堆不够或泄漏，不是「关掉这个限制」 |
+| `Metaspace` | 本地内存 | 类 / 类加载器泄漏：动态代理、热部署、`ClassLoader` 不释放 | `jcmd VM.classloaders`、`-XX:MaxMetaspaceSize` 定位增长；查谁一直 defineClass |
+| `Direct buffer memory` | 堆外 | `ByteBuffer.allocateDirect` 不回收、Netty 堆外池泄漏 | `-XX:MaxDirectMemorySize`、NMT（`-XX:NativeMemoryTracking`）；查 Cleaner 有没有跑 |
+| `unable to create native thread` | 本地内存 / OS | 线程开太多，每条平台线程要栈（`-Xss`）+ OS 线程 | 别无限开平台线程；`ulimit -u`；I/O 并发换虚拟线程 |
+| `Requested array size exceeds VM limit` | 堆 | 想分配接近 `Integer.MAX_VALUE` 的数组 | 分页 / 流式处理，别一次性 `new byte[huge]` |
+
+堆 OOM 和 Metaspace OOM 不是一个 dump 能看完的。类泄漏（第 3 行）是最难查的一类：Tomcat 重启应用、动态生成代理类、Groovy/JSP 反复编译，旧 `ClassLoader` 上挂着的 Class 全不可达才能卸，一个静态字段、一条 ThreadLocal、一个没停的线程握着它，Metaspace 就只涨不跌（并发篇 ThreadLocal 弱引用那节、类加载篇卸载条件那节，都是这条的分支）。
+
+`StackOverflowError` 不是 OOM：那是单条线程的 JVM 栈（`-Xss`）撑爆，深递归 / 循环引用序列化，改算法或调 `-Xss`，和堆无关。
+
+改一行的对照：`-Xmx512m` 下无界 `HashMap` 缓存 → `Java heap space`；同样代码把缓存换成 `-XX:MaxMetaspaceSize=64m` 下狂 `defineClass` → `Metaspace`。同一个「内存不够」，dump 和参数完全不同。看后缀再动手。
+
+---
+
+## 十二、完整走一遍：一次 Young GC
+
+1. Eden 的 TLAB 打满，线程向 G1 要新 Region。年轻代占到阈值，触发 Young GC。
+2. STW。扫描根：各线程栈帧的局部变量和操作数栈里的引用、JNI 句柄、对应 RSet 里指向年轻代的卡。
+3. 活对象拷到 Survivor（年龄 +1）或 Old（年龄到了 / Survivor 装不下）。源 Eden Region 变 free。
+4. 修正所有指向被搬走对象的指针。RSet + 根保证能找到这些指针。
+5. 恢复 mutator。停顿时间记入日志，G1 用它调整下次 collection set 大小，往 `MaxGCPauseMillis` 上靠。
+
+对象活过足够多次 Young，进 Old。Old 涨到 IHOP，下一次 Young 带 Concurrent Start，后台标记。标记完进入 Mixed，每次捎上几个垃圾多的 Old Region。标记期间分配太猛、空闲跟不上，才 Full GC。
+
+把这条链路说完，比背「新生代伊甸幸存者」三个词有用。G1 的年轻代根本不必在地址上连续，还用「一块连续 Eden」讲 21，是在讲 Parallel / 更早的收集器。
+
 下一篇把类怎么进方法区钉完：加载、链接、初始化、双亲委派、模块。GC 收的是堆上的实例；类本身活在方法区 / Metaspace，卸不卸得掉是另一套规则。

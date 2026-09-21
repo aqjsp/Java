@@ -264,3 +264,33 @@ Spring AOP：有接口默认 JDK Proxy，类代理才走 CGLIB。不是「CGLIB 
 
 再追：**JIT 单态调用点失效？** 某调用点只见过 Dog，C2 把 `invokevirtual` 收成直接调并内联；来了 Cat，去优化回解释，再编多态。逃逸分析三种结果：栈上分配、标量替换、同步消除——是实现，不是语言保证。`jstack` 看不见虚拟线程，用 `jcmd Thread.dump_to_file`。
 
+---
+
+### 19、ThreadLocal 会内存泄漏吗？为什么？
+
+能说出口：会。`ThreadLocalMap.Entry` 的 key 是弱引用（ThreadLocal 对象），value 是强引用。ThreadLocal 字段没了，key 被 GC，Entry 变陈旧（`get()==null`），但 value 还被 `Thread → table → Entry` 强引用着。线程池里线程活很久，value 堆积不回收。
+
+往下追：**为什么 key 要弱引用？** 让「你不再用这个 ThreadLocal 时它能被回收」。代价是产生陈旧 Entry。JDK 缓解：`get`/`set` 撞到陈旧槽顺手 `expungeStaleEntry` 清一格，但「碰上才清」，不保证。
+
+再追：**正解？** 用完 `remove()`。线程池 `finally { tl.remove(); }`，否则复用线程带上一个任务的 value，既泄漏又串数据。`ThreadLocalMap` 是开放寻址 + 线性探测，不是 HashMap。`InheritableThreadLocal` 在线程池上几乎必错（值是创建时拷贝，池线程不新建）。虚拟线程别塞 ThreadLocal，跨作用域用 `ScopedValue`。
+
+---
+
+### 20、泛型擦除后还能拿到类型参数吗？List&lt;?&gt; 为什么不能 set？
+
+能说出口：对象的运行时类型擦了（`ArrayList<String>().getClass()` 是 `ArrayList`），但字段/方法/超类子句里的类型参数写在 class 文件的 `Signature` 属性里，反射 `getGenericSuperclass` 能读。`new TypeRef<Map<String,Integer>>(){}` 匿名子类把类型固化进 class 文件——这就是 Jackson `TypeReference` / Guava `TypeToken` 的原理。
+
+往下追：**`List<?>` 为什么不能 `set`？** `get` 返回 `capture of ?`，`set` 要同一个 capture，编译器不敢确认，拒绝。加私有 `<T>` helper，调用点把 `?` 捕获成同一个 `CAP#1`，get/set 面对同一个 T（捕获转换，JLS 5.1.10）。
+
+再追：**型变？** 泛型不变（`List<String>` 不是 `List<Object>`），数组协变（运行时 `ArrayStoreException`）。PECS：`? extends` 只读、`? super` 只写。擦除擦成最左边界（没写就 Object），`get` 处编译器插 `checkcast`。递归泛型 `Enum<E extends Enum<E>>` 让 `compareTo` 只接受同族。
+
+---
+
+### 21、为什么 SimpleDateFormat 不能当 static 共享？java.time 呢？
+
+能说出口：`SimpleDateFormat` 有内部可变 `Calendar` 字段，`format` 分步读写它，多线程共享一个实例会脏读——错日期，甚至 `ArrayIndexOutOfBoundsException`。Javadoc 明说 not synchronized。
+
+往下追：**三条出路？** `synchronized` 包（退化串行）、`ThreadLocal<SimpleDateFormat>`（记得 remove）、换 `DateTimeFormatter`（不可变、线程安全，能 static final）。新代码走第三条。
+
+再追：**Instant / LocalDateTime / ZonedDateTime？** Instant 是 UTC 绝对时刻（存时间戳）；LocalDateTime 没有时区，不对应任何绝对时刻（转 Instant 必须 `atZone` 补时区）；ZonedDateTime 带时区规则含夏令时。存 Instant/UTC，展示才转时区，ZoneId 用 IANA 名不用 `GMT+8`。`Duration`（纳秒/机器）vs `Period`（年月日/人类）：`plus(Period.ofMonths(1))` 到月末会取当月最后一天，`plusDays(30)` 死板 30 天。全是不可变值类型，`plusDays` 不接返回值等于白算。
+
