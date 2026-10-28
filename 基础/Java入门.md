@@ -293,7 +293,7 @@ Integer s = flag ? n : Integer.valueOf(0); // 两边都是 Integer，s 是 null
 
 ### 1、javac 产出的不是机器码
 
-```
+```text
 Hello.java  --javac-->  Hello.class  --java Hello-->  类加载 / 解释 / JIT
 ```
 
